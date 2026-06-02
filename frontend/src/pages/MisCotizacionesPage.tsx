@@ -2,25 +2,23 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import axios from 'axios'
+import type { CotizacionResponse } from '../types.ts'
 
-const API = import.meta.env.VITE_API_BASE_URL || '/api/v1'
+const API = import.meta.env['VITE_API_BASE_URL'] as string | undefined ?? '/api/v1'
 
-/**
- * <<component>> MisCotizacionesPage
- * Lists all quotations for the current user.
- * Quality Attribute: Operabilidad, Reconocibilidad (ISO 25010)
- */
 export default function MisCotizacionesPage() {
-  const [cotizaciones, setCotizaciones] = useState([])
+  const [cotizaciones, setCotizaciones] = useState<CotizacionResponse[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const token = localStorage.getItem('access_token')
-    axios
-      .get(`${API}/cotizaciones`, { headers: { Authorization: `Bearer ${token}` } })
-      .then((res) => setCotizaciones(res.data))
-      .catch(() => toast.error('Error al cargar cotizaciones'))
-      .finally(() => setLoading(false))
+    void axios
+      .get<CotizacionResponse[]>(`${API}/cotizaciones`, {
+        headers: { Authorization: `Bearer ${token ?? ''}` },
+      })
+      .then((res) => { setCotizaciones(res.data) })
+      .catch(() => { toast.error('Error al cargar cotizaciones') })
+      .finally(() => { setLoading(false) })
   }, [])
 
   if (loading) return <p>Cargando cotizaciones...</p>
@@ -50,11 +48,9 @@ export default function MisCotizacionesPage() {
                 <td>{c.numero}</td>
                 <td>{c.clienteNombre}</td>
                 <td>{c.estado}</td>
-                <td>₡{c.total?.toFixed(2)}</td>
+                <td>₡{c.total.toFixed(2)}</td>
                 <td>{c.fechaVigencia}</td>
-                <td>
-                  <Link to={`/cotizaciones/${c.id}`}>Ver detalle</Link>
-                </td>
+                <td><Link to={`/cotizaciones/${c.id}`}>Ver detalle</Link></td>
               </tr>
             ))}
           </tbody>

@@ -2,18 +2,15 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
-import App from './App.jsx'
+import App from './App.tsx'
 
-/**
- * React 18 entry point.
- * <<component>> Feature: ReactToasting — ToastContainer renders global toast
- * notifications used across all accounting pages.
- */
-createRoot(document.getElementById('root')).render(
+const rootElement = document.getElementById('root')
+if (!rootElement) throw new Error('Root element #root not found in index.html')
+
+createRoot(rootElement).render(
   <StrictMode>
     <App />
-    {/* Pattern: Decorator — ToastContainer wraps the app to provide
-        notification capability without modifying individual components */}
+    {/* Pattern: Decorator — ToastContainer wraps the app for global notifications */}
     <ToastContainer
       position="top-right"
       autoClose={4000}
