@@ -1,0 +1,38 @@
+# =============================================================================
+# api-contabilidad .gitignore
+# =============================================================================
+
+# Environment secrets — NEVER commit these
+.env
+*.env.local
+
+# Maven build artifacts
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+!backend/.mvn/wrapper/maven-wrapper.properties
+
+# Node modules and build output
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# IDE files
+.idea/
+*.iml
+.vscode/settings.json
+*.class
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# JaCoCo coverage reports
+backend/target/site/
+backend/target/jacoco.exec
+
+# Docker
+*.pid
