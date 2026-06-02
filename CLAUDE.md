@@ -9,16 +9,38 @@ and abonos (partial payments). Backend is Spring Boot; frontend is React (alread
 # Run everything
 docker compose up --build
 
-# Backend tests + coverage
+# ── Backend ──────────────────────────────────────────────────────────
+# Unit tests only (Mockito, no DB — fast)
 cd backend && ./mvnw test
-cd backend && ./mvnw verify          # generates JaCoCo report at target/site/jacoco/
-
+# Integration tests + unit + JaCoCo coverage gate (Testcontainers starts MariaDB)
+cd backend && ./mvnw verify
 # Single test class
 cd backend && ./mvnw test -Dtest=CotizacionServiceTest
+# Single integration test
+cd backend && ./mvnw verify -Dit.test=CotizacionIT
 
-# Frontend dev
-cd frontend && npm install && npm run dev
+# ── Frontend ─────────────────────────────────────────────────────────
+# Install deps (REQUIRED after package.json changes; commits package-lock.json)
+cd frontend && npm install
+# Dev server
+cd frontend && npm run dev
+# TypeScript strict type-check (no emit)
+cd frontend && npm run type-check
+# ESLint
+cd frontend && npm run lint
+# Vitest unit tests
+cd frontend && npm test
+# Vitest with coverage report
+cd frontend && npm run test:coverage
+# Playwright E2E (API mocked — no backend needed)
+cd frontend && npm run test:e2e
+# Playwright with visible browser for debugging
+cd frontend && npx playwright test --headed
 ```
+
+## Frontend — important after dependency changes
+After editing `package.json`, always run `npm install` and commit the updated
+`package-lock.json`. CI uses `npm ci` which requires a locked file in sync.
 
 ## Tech stack — EXACT versions (never guess or upgrade without asking)
 | Component  | Version          | Notes                                      |
@@ -119,6 +141,32 @@ app.cors.allowed-origins→ CORS_ALLOWED_ORIGINS (comma-separated)
 4. `spring-boot-starter-flyway` may need to be `flyway-core` if Maven can't resolve it
 5. springdoc `2.8.3` targets Spring Boot 3.x → may need `3.x` for Spring Boot 4.x
 6. Sessions (spring-boot-starter-session-jdbc) kept in pom.xml but disabled via `STATELESS` policy
+
+## Frontend TypeScript rules
+- All source files: `.tsx` (components, pages) or `.ts` (pure logic, types)
+- Never use `any` — use `unknown` + type guard if type is truly unknown
+- All API responses typed via `src/types.ts` — add types there if backend adds fields
+- Axios calls: always generic `axios.get<Type>(...)` — never raw `.get()`
+- Promises in event handlers: wrap with `void` or use a safe error handler — never ignore
+- `valueAsNumber: true` in `register()` for all `type="number"` inputs
+- `@testing-library/jest-dom` matchers are available in tests (setup.ts imports them)
+
+## Test separation (backend)
+| Command | What runs | When |
+|---------|-----------|------|
+| `./mvnw test` | `*Test.java` (Mockito, no DB) | Every commit |
+| `./mvnw verify` | `*Test.java` + `*IT.java` (Testcontainers) + JaCoCo gate | CI on main |
+
+Integration tests live in `src/test/java/.../integration/` and extend `AbstractContainerIT`.
+JwtTestHelper generates signed tokens for test requests.
+
+## CI (GitHub Actions — free plan)
+| Workflow | Triggers | Jobs |
+|----------|----------|------|
+| `ci.yml` | every push / PR | backend-unit, frontend (type-check+lint+vitest+build) |
+| `integration.yml` | push to main / PR to main | backend-integration (verify + JaCoCo), frontend-e2e (Playwright) |
+
+Never add: CodeQL, SonarQube cloud, or any paid GHAS feature — free plan only.
 
 ## What NOT to do
 - Never access the DB repository directly from a controller

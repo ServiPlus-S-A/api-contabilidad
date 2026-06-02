@@ -5,7 +5,7 @@ Documento de continuidad para retomar el proyecto sin re-leer el código.
 
 ---
 
-## Estado actual del proyecto
+## Estado actual del proyecto — actualizado 2026-06-02
 
 ### ✅ Completo
 | Área | Detalle |
@@ -21,7 +21,12 @@ Documento de continuidad para retomar el proyecto sin re-leer el código.
 | Backend — utility | GlobalExceptionHandler, 3 excepciones tipadas, NumeroGenerator |
 | Backend — config | AppProperties (@ConfigurationProperties), AsyncConfig, MinioConfig, SwaggerConfig |
 | Infraestructura | Dockerfile (multi-stage, Java 25), kong.yml, V1__schema_inicial.sql, application.properties |
-| Tests | 16 unit tests: CotizacionServiceTest (8), FacturaServiceTest (5), PagoServiceTest (6) |
+| Frontend TypeScript | Migración completa JS→TS strict; tsconfig.app.json strict; src/types.ts con todos los tipos de API |
+| Frontend unit tests | Vitest + RTL: RouteGuard (2), MisCotizacionesPage (5), NuevaCotizacionPage (3) = 10 tests |
+| Frontend E2E | Playwright Chromium: auth.spec (2), cotizaciones.spec (5), facturas.spec (4) = 11 tests; API mocked |
+| Backend unit tests | 16 tests Mockito: CotizacionServiceTest (8), FacturaServiceTest (5), PagoServiceTest (6) |
+| Backend integration | Testcontainers MariaDB: ApplicationContextIT (1), CotizacionIT (9), FacturaIT (4) = 14 tests |
+| CI GitHub Actions | ci.yml (cada push: backend-unit + frontend checks) + integration.yml (main: verify + E2E) |
 
 ### ❌ Pendiente / No implementado
 | Área | Qué falta | Prioridad |
