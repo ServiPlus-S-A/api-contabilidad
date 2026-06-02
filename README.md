@@ -1,6 +1,6 @@
-# api-contabilidad — Yummy Inc
+# api-contabilidad — Serviplus SA
 
-Módulo de contabilidad del sistema de gestión empresarial Yummy Inc.
+Módulo de contabilidad del sistema de gestión empresarial Serviplus SA.
 Gestiona **Facturas**, **Cotizaciones** y **Pagos (Abonos)** a través de una API REST + SPA React.
 
 **Architecture**: ADR-M1 (Strict Layered) · ADR-M2 (REST API) · ADR-M3 (Expanded MVC) · ADR-S1 (Docker Compose) · ADR-S3 (Audit Log)
