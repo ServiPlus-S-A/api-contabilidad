@@ -1,0 +1,97 @@
+# ==============================================================================
+# CI — runs on every push and PR to any branch
+# Scope: FAST checks only (no Docker containers, no E2E)
+#   - Backend: compile + unit tests (*Test.java) + JaCoCo report
+#   - Frontend: type-check (tsc) + ESLint + Vitest unit tests + production build
+# ==============================================================================
+
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+
+# Cancel in-progress runs on the same branch to save free-plan minutes
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Backend — unit tests only (*Test.java); *IT.java is excluded by surefire
+  # No service containers needed — all deps are mocked with Mockito
+  # ────────────────────────────────────────────────────────────────────────────
+  backend-unit:
+    name: Backend — unit tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 25 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Run unit tests
+        run: ./mvnw test -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+
+      - name: Upload JaCoCo HTML report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: jacoco-unit-report
+          path: backend/target/site/jacoco/
+          retention-days: 7
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Frontend — TypeScript + lint + Vitest + production build
+  # Requires package-lock.json to be committed (run `npm install` locally first)
+  # ────────────────────────────────────────────────────────────────────────────
+  frontend:
+    name: Frontend — type-check, lint, tests, build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 20 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript strict type-check
+        run: npm run type-check
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Vitest unit tests with coverage
+        run: npm run test:coverage
+
+      - name: Upload Vitest coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vitest-coverage
+          path: frontend/coverage/
+          retention-days: 7
+
+      - name: Production build (tsc + vite)
+        run: npm run build
