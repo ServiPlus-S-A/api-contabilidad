@@ -26,7 +26,7 @@ Documento de continuidad para retomar el proyecto sin re-leer el código.
 | Frontend E2E | Playwright Chromium: auth.spec (2), cotizaciones.spec (5), facturas.spec (4) = 11 tests; API mocked |
 | Backend unit tests | 16 tests Mockito: CotizacionServiceTest (8), FacturaServiceTest (5), PagoServiceTest (6) |
 | Backend integration | Testcontainers MariaDB 1.21.1 (BOM explícito en pom.xml): ApplicationContextIT, CotizacionIT, FacturaIT |
-| CI GitHub Actions | `pr-develop.yml` — corre solo en PRs a `develop`; jobs: backend-checks + frontend-checks |
+| CI GitHub Actions | `pr-develop.yml` (verify + JaCoCo 80% gate), `quality.yml` (SpotBugs HIGH), `cd-main.yml` (Docker Hub → EC2) |
 | Prettier | Frontend: prettier 3.4.2 + eslint-config-prettier 9.1.0; config en `frontend/.prettierrc` |
 | Lineamientos | Documento completo en sección final de este archivo; resumen en CLAUDE.md |
 | .gitattributes | `* text=auto` en raíz; CRLF normalizado a LF en commit |
@@ -39,6 +39,8 @@ Documento de continuidad para retomar el proyecto sin re-leer el código.
 | PDF | Layout completo con tabla de líneas de detalle | Media |
 | Kong JWT | Consumers con JWT credentials para producción | Baja |
 | Rama develop | Creada — el CI se activa abriendo PRs hacia ella | ✅ |
+| CD — secrets EC2 | Agregar en GitHub: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`, `EC2_HOST`, `EC2_USER`, `EC2_SSH_KEY`, `VITE_API_BASE_URL` | Alta |
+| CD — setup EC2 | Una vez en el servidor: instalar Docker, crear `/home/ubuntu/api-contabilidad/`, copiar `.env` con valores de producción | Alta |
 
 ---
 

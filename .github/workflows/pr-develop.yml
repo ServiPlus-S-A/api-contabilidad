@@ -3,8 +3,11 @@
 # Corre SOLO en pull requests que apunten a la rama develop.
 #
 # Jobs (paralelos):
-#   backend-checks  — unit tests (*Test.java) + JaCoCo report
+#   backend-checks  — unit + integration tests + JaCoCo 80% coverage gate
 #   frontend-checks — Prettier + TypeScript + ESLint + Vitest + build
+#
+# El 80% de cobertura se enforza vía JaCoCo en los paquetes logic y serializer.
+# Cambiar el umbral en backend/pom.xml (jacoco-maven-plugin → check → minimum).
 # ==============================================================================
 
 name: PR → develop
@@ -20,10 +23,12 @@ concurrency:
 jobs:
 
   # ────────────────────────────────────────────────────────────────────────────
-  # Backend — unit tests (*Test.java) + JaCoCo
+  # Backend — unit tests + integration tests (Testcontainers) + JaCoCo gate
+  # ./mvnw verify corre: Surefire (*Test.java) + Failsafe (*IT.java) + JaCoCo check
+  # Testcontainers levanta MariaDB automáticamente — Docker disponible en ubuntu-latest
   # ────────────────────────────────────────────────────────────────────────────
   backend-checks:
-    name: Backend — unit tests
+    name: Backend — verify + 80% coverage gate
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -42,9 +47,9 @@ jobs:
       - name: Ensure mvnw is executable
         run: chmod +x mvnw
 
-      - name: Unit tests + JaCoCo report
+      - name: Unit + integration tests + coverage gate
         run: |
-          ./mvnw test -B \
+          ./mvnw verify -B \
             -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
         env:
           JWT_SECRET: test-secret-minimum-32-chars-for-hmac
@@ -61,8 +66,16 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: jacoco-unit-report
+          name: jacoco-report
           path: backend/target/site/jacoco/
+          retention-days: 7
+
+      - name: Upload Failsafe report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: failsafe-report
+          path: backend/target/failsafe-reports/
           retention-days: 7
 
   # ────────────────────────────────────────────────────────────────────────────

@@ -238,9 +238,11 @@ JwtTestHelper generates signed tokens for test requests.
 
 ## CI (GitHub Actions)
 
-| Workflow           | Triggers          | Jobs                                                    |
-| ------------------ | ----------------- | ------------------------------------------------------- |
-| `pr-develop.yml`   | PR → develop only | backend-checks (unit + JaCoCo), frontend-checks (Prettier + TS + ESLint + Vitest + build) |
+| Workflow           | Triggers          | Jobs                                                                                                   |
+| ------------------ | ----------------- | ------------------------------------------------------------------------------------------------------ |
+| `pr-develop.yml`   | PR → develop      | backend-checks (unit + integration + JaCoCo 80% gate), frontend-checks (Prettier+TS+ESLint+Vitest+build) |
+| `quality.yml`      | PR → develop      | backend-spotbugs (SpotBugs HIGH threshold — bugs de prioridad alta rompen el build)                    |
+| `cd-main.yml`      | push a main       | build-backend, build-frontend (→ Docker Hub), deploy (→ EC2 via SSH)                                  |
 
 ## What NOT to do
 
