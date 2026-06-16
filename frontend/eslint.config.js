@@ -3,6 +3,7 @@ import globals from 'globals'
 import tseslint from 'typescript-eslint'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
+import prettierConfig from 'eslint-config-prettier'
 
 export default tseslint.config(
   { ignores: ['dist', 'node_modules', 'coverage', 'playwright-report'] },
@@ -27,6 +28,15 @@ export default tseslint.config(
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-misused-promises': 'error',
       '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
+      '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
     },
   },
+  // Test files: disable unbound-method — false positive with vitest mocked functions
+  {
+    files: ['**/*.test.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/unbound-method': 'off',
+    },
+  },
+  prettierConfig,
 )

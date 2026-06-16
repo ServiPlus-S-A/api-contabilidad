@@ -5,18 +5,18 @@ import com.serviplus.apicontabilidad.serializer.factura.FacturaRequest;
 import com.serviplus.apicontabilidad.serializer.factura.FacturaResponse;
 import com.serviplus.apicontabilidad.serializer.factura.LineaFacturaRequest;
 import io.minio.MinioClient;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
+import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -30,8 +30,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("Factura API — integration tests")
 class FacturaIT extends AbstractContainerIT {
 
-    @Autowired
-    private TestRestTemplate restTemplate;
+    private RestTemplate restTemplate;
+
+    @BeforeEach
+    void setUp() {
+        restTemplate = makeClient();
+    }
 
     @MockitoBean
     private MinioClient minioClient;
@@ -71,7 +75,7 @@ class FacturaIT extends AbstractContainerIT {
             HttpEntity<FacturaRequest> req = new HttpEntity<>(buildRequest(), authHeaders(JwtTestHelper.contadorToken()));
 
             ResponseEntity<FacturaResponse> res = restTemplate.postForEntity(
-                    "/api/v1/facturas", req, FacturaResponse.class);
+                    url("/api/v1/facturas"), req, FacturaResponse.class);
 
             assertThat(res.getStatusCode()).isEqualTo(HttpStatus.CREATED);
             FacturaResponse body = res.getBody();
@@ -87,7 +91,7 @@ class FacturaIT extends AbstractContainerIT {
             HttpEntity<FacturaRequest> req = new HttpEntity<>(buildRequest(), authHeaders(JwtTestHelper.contadorToken()));
 
             ResponseEntity<FacturaResponse> res = restTemplate.postForEntity(
-                    "/api/v1/facturas", req, FacturaResponse.class);
+                    url("/api/v1/facturas"), req, FacturaResponse.class);
 
             FacturaResponse body = res.getBody();
             assertThat(body).isNotNull();
@@ -106,20 +110,17 @@ class FacturaIT extends AbstractContainerIT {
         @Test
         @DisplayName("200 con datos completos de la factura recién creada")
         void debeRetornarFacturaPorId() {
-            // Arrange — crear primero
             ResponseEntity<FacturaResponse> created = restTemplate.postForEntity(
-                    "/api/v1/facturas",
+                    url("/api/v1/facturas"),
                     new HttpEntity<>(buildRequest(), authHeaders(JwtTestHelper.contadorToken())),
                     FacturaResponse.class);
             long id = created.getBody().id();
 
-            // Act
             ResponseEntity<FacturaResponse> res = restTemplate.exchange(
-                    "/api/v1/facturas/" + id, HttpMethod.GET,
+                    url("/api/v1/facturas/" + id), HttpMethod.GET,
                     new HttpEntity<>(authHeaders(JwtTestHelper.contadorToken())),
                     FacturaResponse.class);
 
-            // Assert
             assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
             assertThat(res.getBody()).isNotNull();
             assertThat(res.getBody().id()).isEqualTo(id);
@@ -130,7 +131,7 @@ class FacturaIT extends AbstractContainerIT {
         @DisplayName("404 cuando la factura no existe")
         void debeRetornar404CuandoNoExiste() {
             ResponseEntity<String> res = restTemplate.exchange(
-                    "/api/v1/facturas/999999", HttpMethod.GET,
+                    url("/api/v1/facturas/999999"), HttpMethod.GET,
                     new HttpEntity<>(authHeaders(JwtTestHelper.contadorToken())),
                     String.class);
 

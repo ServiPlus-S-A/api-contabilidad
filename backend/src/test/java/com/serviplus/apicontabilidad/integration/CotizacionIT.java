@@ -5,18 +5,18 @@ import com.serviplus.apicontabilidad.serializer.cotizacion.CotizacionRequest;
 import com.serviplus.apicontabilidad.serializer.cotizacion.CotizacionResponse;
 import com.serviplus.apicontabilidad.serializer.cotizacion.LineaCotizacionRequest;
 import io.minio.MinioClient;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
+import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -30,8 +30,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("Cotización API — integration tests")
 class CotizacionIT extends AbstractContainerIT {
 
-    @Autowired
-    private TestRestTemplate restTemplate;
+    private RestTemplate restTemplate;
+
+    @BeforeEach
+    void setUp() {
+        restTemplate = makeClient();
+    }
 
     @MockitoBean
     private MinioClient minioClient;
@@ -73,7 +77,7 @@ class CotizacionIT extends AbstractContainerIT {
             HttpEntity<CotizacionRequest> req = new HttpEntity<>(buildRequest(), authHeaders(JwtTestHelper.clienteToken()));
 
             ResponseEntity<CotizacionResponse> res = restTemplate.postForEntity(
-                    "/api/v1/cotizaciones", req, CotizacionResponse.class);
+                    url("/api/v1/cotizaciones"), req, CotizacionResponse.class);
 
             assertThat(res.getStatusCode()).isEqualTo(HttpStatus.CREATED);
             assertThat(res.getBody()).isNotNull();
@@ -88,7 +92,7 @@ class CotizacionIT extends AbstractContainerIT {
             HttpEntity<CotizacionRequest> req = new HttpEntity<>(buildRequest(), authHeaders(JwtTestHelper.clienteToken()));
 
             ResponseEntity<CotizacionResponse> res = restTemplate.postForEntity(
-                    "/api/v1/cotizaciones", req, CotizacionResponse.class);
+                    url("/api/v1/cotizaciones"), req, CotizacionResponse.class);
 
             CotizacionResponse body = res.getBody();
             assertThat(body).isNotNull();
@@ -101,7 +105,7 @@ class CotizacionIT extends AbstractContainerIT {
         @DisplayName("401 sin token de autenticación")
         void debeRetornar401SinToken() {
             ResponseEntity<String> res = restTemplate.postForEntity(
-                    "/api/v1/cotizaciones", new HttpEntity<>(buildRequest()), String.class);
+                    url("/api/v1/cotizaciones"), new HttpEntity<>(buildRequest()), String.class);
 
             assertThat(res.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
         }
@@ -114,7 +118,7 @@ class CotizacionIT extends AbstractContainerIT {
             HttpEntity<CotizacionRequest> req = new HttpEntity<>(invalida, authHeaders(JwtTestHelper.clienteToken()));
 
             ResponseEntity<String> res = restTemplate.postForEntity(
-                    "/api/v1/cotizaciones", req, String.class);
+                    url("/api/v1/cotizaciones"), req, String.class);
 
             assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         }
@@ -130,7 +134,7 @@ class CotizacionIT extends AbstractContainerIT {
         @DisplayName("200 con lista vacía cuando no hay registros")
         void debeRetornarListaVacia() {
             ResponseEntity<CotizacionResponse[]> res = restTemplate.exchange(
-                    "/api/v1/cotizaciones", HttpMethod.GET,
+                    url("/api/v1/cotizaciones"), HttpMethod.GET,
                     new HttpEntity<>(authHeaders(JwtTestHelper.clienteToken())),
                     CotizacionResponse[].class);
 
@@ -141,12 +145,12 @@ class CotizacionIT extends AbstractContainerIT {
         @Test
         @DisplayName("retorna la cotización recién creada")
         void debeRetornarCotizacionCreada() {
-            restTemplate.postForEntity("/api/v1/cotizaciones",
+            restTemplate.postForEntity(url("/api/v1/cotizaciones"),
                     new HttpEntity<>(buildRequest(), authHeaders(JwtTestHelper.clienteToken())),
                     CotizacionResponse.class);
 
             ResponseEntity<CotizacionResponse[]> res = restTemplate.exchange(
-                    "/api/v1/cotizaciones", HttpMethod.GET,
+                    url("/api/v1/cotizaciones"), HttpMethod.GET,
                     new HttpEntity<>(authHeaders(JwtTestHelper.clienteToken())),
                     CotizacionResponse[].class);
 
@@ -164,13 +168,13 @@ class CotizacionIT extends AbstractContainerIT {
         @DisplayName("422 al aprobar desde BORRADOR — transición inválida según State Pattern")
         void debeRetornar422SiEstaBorrador() {
             ResponseEntity<CotizacionResponse> created = restTemplate.postForEntity(
-                    "/api/v1/cotizaciones",
+                    url("/api/v1/cotizaciones"),
                     new HttpEntity<>(buildRequest(), authHeaders(JwtTestHelper.clienteToken())),
                     CotizacionResponse.class);
             long id = created.getBody().id();
 
             ResponseEntity<String> res = restTemplate.exchange(
-                    "/api/v1/cotizaciones/" + id + "/aprobar",
+                    url("/api/v1/cotizaciones/" + id + "/aprobar"),
                     HttpMethod.PUT,
                     new HttpEntity<>(authHeaders(JwtTestHelper.adminToken())),
                     String.class);
@@ -183,13 +187,13 @@ class CotizacionIT extends AbstractContainerIT {
         @DisplayName("403 cuando ROLE_CLIENTE intenta aprobar (requiere ADMIN o CONTADOR)")
         void debeRetornar403ParaRolCliente() {
             ResponseEntity<CotizacionResponse> created = restTemplate.postForEntity(
-                    "/api/v1/cotizaciones",
+                    url("/api/v1/cotizaciones"),
                     new HttpEntity<>(buildRequest(), authHeaders(JwtTestHelper.clienteToken())),
                     CotizacionResponse.class);
             long id = created.getBody().id();
 
             ResponseEntity<String> res = restTemplate.exchange(
-                    "/api/v1/cotizaciones/" + id + "/aprobar",
+                    url("/api/v1/cotizaciones/" + id + "/aprobar"),
                     HttpMethod.PUT,
                     new HttpEntity<>(authHeaders(JwtTestHelper.clienteToken())),
                     String.class);

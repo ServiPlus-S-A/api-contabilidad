@@ -1,13 +1,13 @@
-import { useForm, useFieldArray } from 'react-hook-form'
-import { toast } from 'react-toastify'
-import { useNavigate } from 'react-router-dom'
-import axios from 'axios'
-import type { CotizacionFormValues, CotizacionResponse } from '../types.ts'
+import { useForm, useFieldArray } from 'react-hook-form';
+import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import type { CotizacionFormValues, CotizacionResponse } from '../types.ts';
 
-const API = import.meta.env['VITE_API_BASE_URL'] as string | undefined ?? '/api/v1'
+const API = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
 
 export default function NuevaCotizacionPage() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const {
     register,
     control,
@@ -21,22 +21,22 @@ export default function NuevaCotizacionPage() {
       notas: '',
       lineas: [{ descripcion: '', cantidad: 1, precioUnitario: 0 }],
     },
-  })
+  });
 
-  const { fields, append, remove } = useFieldArray({ control, name: 'lineas' })
+  const { fields, append, remove } = useFieldArray({ control, name: 'lineas' });
 
   const onSubmit = async (data: CotizacionFormValues) => {
-    const token = localStorage.getItem('access_token')
+    const token = localStorage.getItem('access_token');
     const res = await axios.post<CotizacionResponse>(`${API}/cotizaciones`, data, {
       headers: { Authorization: `Bearer ${token ?? ''}` },
-    })
-    toast.success(`Cotización ${res.data.numero} creada correctamente`)
-    void navigate(`/cotizaciones/${res.data.id}`)
-  }
+    });
+    toast.success(`Cotización ${res.data.numero} creada correctamente`);
+    navigate(`/cotizaciones/${res.data.id}`);
+  };
 
   const handleError = () => {
-    toast.error('Error al crear la cotización')
-  }
+    toast.error('Error al crear la cotización');
+  };
 
   return (
     <main style={{ maxWidth: 800, margin: '2rem auto', padding: '0 1rem' }}>
@@ -86,13 +86,22 @@ export default function NuevaCotizacionPage() {
               {...register(`lineas.${index}.precioUnitario`, { min: 0.01, valueAsNumber: true })}
             />
             {fields.length > 1 && (
-              <button type="button" onClick={() => { remove(index) }}>✕</button>
+              <button
+                type="button"
+                onClick={() => {
+                  remove(index);
+                }}
+              >
+                ✕
+              </button>
             )}
           </div>
         ))}
         <button
           type="button"
-          onClick={() => { append({ descripcion: '', cantidad: 1, precioUnitario: 0 }) }}
+          onClick={() => {
+            append({ descripcion: '', cantidad: 1, precioUnitario: 0 });
+          }}
         >
           + Agregar línea
         </button>
@@ -107,5 +116,5 @@ export default function NuevaCotizacionPage() {
         </button>
       </form>
     </main>
-  )
+  );
 }

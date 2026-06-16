@@ -15,7 +15,7 @@ public class SwaggerConfig {
     public OpenAPI openAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("API de Contabilidad — Yummy Inc")
+                        .title("API de Contabilidad — Serviplus SA")
                         .description("Gestión de cotizaciones, facturas y abonos. Autenticación vía JWT Bearer.")
                         .version("1.0.0"))
                 .addSecurityItem(new SecurityRequirement().addList("Bearer"))

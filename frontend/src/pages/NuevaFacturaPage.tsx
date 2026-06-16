@@ -1,13 +1,13 @@
-import { useForm, useFieldArray } from 'react-hook-form'
-import { toast } from 'react-toastify'
-import axios from 'axios'
-import { useNavigate } from 'react-router-dom'
-import type { FacturaFormValues, FacturaResponse } from '../types.ts'
+import { useForm, useFieldArray } from 'react-hook-form';
+import { toast } from 'react-toastify';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import type { FacturaFormValues, FacturaResponse } from '../types.ts';
 
-const API = import.meta.env['VITE_API_BASE_URL'] as string | undefined ?? '/api/v1'
+const API = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
 
 export default function NuevaFacturaPage() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const {
     register,
     control,
@@ -21,29 +21,28 @@ export default function NuevaFacturaPage() {
       notas: '',
       lineas: [{ descripcion: '', cantidad: 1, precioUnitario: 0 }],
     },
-  })
+  });
 
-  const { fields, append, remove } = useFieldArray({ control, name: 'lineas' })
+  const { fields, append, remove } = useFieldArray({ control, name: 'lineas' });
 
   const onSubmit = async (data: FacturaFormValues) => {
-    const token = localStorage.getItem('access_token')
+    const token = localStorage.getItem('access_token');
     const response = await axios.post<FacturaResponse>(`${API}/facturas`, data, {
       headers: { Authorization: `Bearer ${token ?? ''}` },
-    })
-    toast.success(`Factura ${response.data.numero} creada correctamente`)
-    void navigate(`/facturas/${response.data.id}`)
-  }
+    });
+    toast.success(`Factura ${response.data.numero} creada correctamente`);
+    navigate(`/facturas/${response.data.id}`);
+  };
 
   const handleError = () => {
-    toast.error('Error al crear la factura')
-  }
+    toast.error('Error al crear la factura');
+  };
 
   return (
     <main style={{ maxWidth: 800, margin: '2rem auto', padding: '0 1rem' }}>
       <h1>Nueva Factura</h1>
       {/* eslint-disable-next-line @typescript-eslint/no-misused-promises */}
       <form onSubmit={handleSubmit(onSubmit, handleError)} noValidate>
-
         <section>
           <h2>Datos del cliente</h2>
           <label>
@@ -57,7 +56,10 @@ export default function NuevaFacturaPage() {
           </label>
           <label>
             Nombre del cliente
-            <input type="text" {...register('clienteNombre', { required: 'Requerido', maxLength: 255 })} />
+            <input
+              type="text"
+              {...register('clienteNombre', { required: 'Requerido', maxLength: 255 })}
+            />
             {errors.clienteNombre && <span role="alert">{errors.clienteNombre.message}</span>}
           </label>
           <label>
@@ -80,23 +82,40 @@ export default function NuevaFacturaPage() {
                 step="0.01"
                 placeholder="Cantidad"
                 title="Cantidad de unidades"
-                {...register(`lineas.${index}.cantidad`, { required: true, min: 0.01, valueAsNumber: true })}
+                {...register(`lineas.${index}.cantidad`, {
+                  required: true,
+                  min: 0.01,
+                  valueAsNumber: true,
+                })}
               />
               <input
                 type="number"
                 step="0.01"
                 placeholder="Precio unitario"
                 title="Precio por unidad en moneda local"
-                {...register(`lineas.${index}.precioUnitario`, { required: true, min: 0.01, valueAsNumber: true })}
+                {...register(`lineas.${index}.precioUnitario`, {
+                  required: true,
+                  min: 0.01,
+                  valueAsNumber: true,
+                })}
               />
               {fields.length > 1 && (
-                <button type="button" onClick={() => { remove(index) }}>✕</button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    remove(index);
+                  }}
+                >
+                  ✕
+                </button>
               )}
             </div>
           ))}
           <button
             type="button"
-            onClick={() => { append({ descripcion: '', cantidad: 1, precioUnitario: 0 }) }}
+            onClick={() => {
+              append({ descripcion: '', cantidad: 1, precioUnitario: 0 });
+            }}
           >
             + Agregar línea
           </button>
@@ -112,5 +131,5 @@ export default function NuevaFacturaPage() {
         </button>
       </form>
     </main>
-  )
+  );
 }
