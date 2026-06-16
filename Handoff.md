@@ -1,11 +1,11 @@
 # Handoff.md — api-contabilidad
 
 Documento de continuidad para retomar el proyecto sin re-leer el código.
-**Última actualización**: 2026-06-01
+**Última actualización**: 2026-06-16
 
 ---
 
-## Estado actual del proyecto — actualizado 2026-06-02
+## Estado actual del proyecto
 
 ### ✅ Completo
 | Área | Detalle |
@@ -25,8 +25,12 @@ Documento de continuidad para retomar el proyecto sin re-leer el código.
 | Frontend unit tests | Vitest + RTL: RouteGuard (2), MisCotizacionesPage (5), NuevaCotizacionPage (3) = 10 tests |
 | Frontend E2E | Playwright Chromium: auth.spec (2), cotizaciones.spec (5), facturas.spec (4) = 11 tests; API mocked |
 | Backend unit tests | 16 tests Mockito: CotizacionServiceTest (8), FacturaServiceTest (5), PagoServiceTest (6) |
-| Backend integration | Testcontainers MariaDB: ApplicationContextIT (1), CotizacionIT (9), FacturaIT (4) = 14 tests |
-| CI GitHub Actions | ci.yml (cada push: backend-unit + frontend checks) + integration.yml (main: verify + E2E) |
+| Backend integration | Testcontainers MariaDB 1.21.1 (BOM explícito en pom.xml): ApplicationContextIT, CotizacionIT, FacturaIT |
+| CI GitHub Actions | `pr-develop.yml` — corre solo en PRs a `develop`; jobs: backend-checks + frontend-checks |
+| SonarCloud | Backend: sonar-maven-plugin 4.0.0.4121 + JaCoCo XML; requiere secrets SONAR_TOKEN + vars en GitHub |
+| Prettier | Frontend: prettier 3.4.2 + eslint-config-prettier 9.1.0; config en `frontend/.prettierrc` |
+| Lineamientos | Documento completo en sección final de este archivo; resumen en CLAUDE.md |
+| .gitattributes | `* text=auto` en raíz; CRLF normalizado a LF en commit |
 
 ### ❌ Pendiente / No implementado
 | Área | Qué falta | Prioridad |
@@ -35,7 +39,8 @@ Documento de continuidad para retomar el proyecto sin re-leer el código.
 | Email | Email real del cliente (hardcoded placeholder en EmailCotizacionTask) | Media |
 | PDF | Layout completo con tabla de líneas de detalle | Media |
 | Kong JWT | Consumers con JWT credentials para producción | Baja |
-| CRLF | Agregar `.gitattributes` raíz con `* text=auto` | Baja |
+| SonarCloud | Crear proyecto en sonarcloud.io y configurar secrets/vars en GitHub repo | Media |
+| Rama develop | Crear la rama `develop` en GitHub para que el CI se active | Alta |
 
 ---
 
@@ -62,6 +67,12 @@ para que el sistema funcione sin Kong en desarrollo local (hit directo a puerto 
 README lo documenta como limitación conocida. Para escalar, reemplazar `AsyncConfig` con un
 Redis Streams consumer. Los `@EventListener` en las tasks ya están desacoplados del servicio
 via `ApplicationEventPublisher` — el refactor sería solo en la capa async.
+
+### Por qué Testcontainers BOM explícito en pom.xml
+Spring Boot 4.0.x gestiona testcontainers vía su propio BOM, pero m2e (Eclipse Maven plugin)
+no lo resuelve correctamente en el IDE, causando error "version cannot be empty". Se añadió
+`<dependencyManagement>` con el BOM de testcontainers 1.21.1 explícitamente para que tanto
+el IDE como el CLI resuelvan la versión sin problemas.
 
 ---
 
@@ -112,40 +123,35 @@ AbonoViewSet.registrar(facturaId, request, auth)
 
 ---
 
-## Estructura de carpetas generada
+## Estructura de carpetas
 
 ```
 api-contabilidad/
 ├── CLAUDE.md                    ← Claude Code lee esto cada sesión
 ├── Handoff.md                   ← este archivo
+├── .gitattributes               ← text=auto; LF normalizado en commit
 ├── docker-compose.yml
 ├── .env.example
 ├── .gitignore
 ├── README.md
+├── .github/workflows/
+│   └── pr-develop.yml           ← único CI; corre solo en PRs a develop
 ├── kong/
 │   └── kong.yml                 ← Kong DB-less: CORS + rate limiting
 ├── backend/
 │   ├── Dockerfile               ← multi-stage: eclipse-temurin:25
-│   ├── pom.xml                  ← Spring Boot 4.0.6, Java 25, JaCoCo
+│   ├── pom.xml                  ← Spring Boot 4.0.6, Java 25, JaCoCo, Sonar, TC BOM
 │   └── src/main/java/com/serviplus/apicontabilidad/
-│       ├── BackendApplication.java   ← @EnableConfigurationProperties(AppProperties)
-│       ├── domain/                   ← JPA entities + enums
-│       ├── data/                     ← Repositories
-│       ├── serializer/               ← DTOs (records) + static mappers
-│       │   ├── cotizacion/
-│       │   ├── factura/
-│       │   └── abono/
-│       ├── logic/                    ← Services (reglas de negocio)
-│       ├── view/                     ← REST controllers
-│       ├── async/                    ← @EventListener tasks
-│       │   └── event/                ← ApplicationEvent subclasses
-│       ├── security/                 ← JWT filter + config
-│       ├── utility/                  ← Handler global, excepciones, NumeroGenerator
-│       └── config/                   ← AppProperties, MinioConfig, etc.
+│       ├── domain/   data/   serializer/   logic/   view/
+│       ├── async/   security/   utility/   config/
 │   └── src/main/resources/
 │       ├── application.properties
 │       └── db/migration/V1__schema_inicial.sql
-└── frontend/                    ← React 18 + Vite (NO TOCAR sin instrucción)
+└── frontend/
+    ├── .prettierrc              ← semi, singleQuote, tabWidth 2, printWidth 100
+    ├── .prettierignore
+    ├── eslint.config.js         ← eslint-config-prettier al final
+    ├── package.json
     └── src/pages/               ← 6 páginas listas
 ```
 
@@ -169,34 +175,127 @@ KONG_PROXY_PORT, KONG_ADMIN_PORT
 
 ---
 
-## Próximas tareas sugeridas (en orden de prioridad)
+## Próximas tareas (en orden de prioridad)
 
-1. **Página de login** (`frontend/src/pages/LoginPage.jsx`)
-   - POST a un endpoint de auth (externo, o temporal en backend)
-   - Guardar `access_token` en localStorage
-   - Redirigir a `/cotizaciones`
-
-2. **Cotizacion enviar** — falta el botón "Enviar para revisión" en `DetalleCotizacionPage`
-   - Endpoint: `PUT /api/v1/cotizaciones/{id}/enviar` (estado BORRADOR → ENVIADA)
-   - Agregar método `enviar()` en `CotizacionService` y ruta en `CotizacionViewSet`
-
-3. **Tests de integración** — `@SpringBootTest` con Testcontainers MariaDB
-   - Reemplazar `BackendApplicationTests` (context loads) con integración real
-
-4. **PDF layout completo** — tabla de líneas en `PDFGeneratorService.generarPDF()`
-
-5. **Lint de frontend** — `cd frontend && npm run lint`
+1. **Crear rama `develop`** en GitHub y configurar como rama base para PRs
+2. **Configurar SonarCloud** — crear proyecto en sonarcloud.io, agregar secret `SONAR_TOKEN` y variables `SONAR_PROJECT_KEY` / `SONAR_ORGANIZATION` en GitHub
+3. **Página de login** (`frontend/src/pages/LoginPage.tsx`)
+4. **Cotizacion enviar** — `PUT /api/v1/cotizaciones/{id}/enviar` (BORRADOR → ENVIADA)
+5. **PDF layout completo** — tabla de líneas en `PDFGeneratorService.generarPDF()`
 
 ---
 
-## Convención de commits del proyecto
+## Lineamientos de Desarrollo del Equipo
+
+**Versión:** 1.0 — **Fecha:** 2026-05-31 — **Audiencia:** Ingenieros Junior
+
+### 1. Flujo Estándar de Desarrollo
+
 ```
-feat: descripción corta ≤ 72 chars en inglés
-fix: ...
-refactor: ...
-chore: ...
-test: ...
-docs: ...
-style: ...
+1. Leer la HU en Azure DevOps
+2. Aclarar dudas ANTES de escribir código
+3. Crear rama desde la rama base correcta
+4. Commits pequeños y frecuentes (máx. 2h sin commit)
+5. Abrir PR con la plantilla completa
+6. Actualizar Azure DevOps con evidencias
+7. Solicitar revisión de código
+8. Merge solo después de aprobación
 ```
-Nunca mezclar español/inglés en el mismo proyecto.
+
+**Principios:**
+- Legibilidad primero. Consistencia con el patrón ya establecido.
+- No hacer más de lo pedido. No dejar código comentado.
+- El historial de git reemplaza los comentarios de "qué se eliminó".
+
+### 2. Convención de Commits
+
+**Formato:** `<tipo>: <descripción corta en imperativo>` — máx. 72 chars
+
+| Tipo | Cuándo |
+|------|--------|
+| `feat` | Nueva funcionalidad |
+| `fix` | Corrección de bug |
+| `refactor` | Reestructuración sin cambio de comportamiento |
+| `chore` | Mantenimiento, config, dependencias |
+| `test` | Agregar o modificar pruebas |
+| `docs` | Documentación |
+| `style` | Formato sin cambio de lógica |
+
+**Correctos:**
+```bash
+feat: added user authentication endpoint
+fix: removed null pointer on payment validation
+chore: added eslint configuration
+```
+
+**Incorrectos:**
+```bash
+fix: correcciones           # muy vago
+update                      # sin tipo, sin descripción
+feat: added login, fixed dashboard bug, updated styles   # demasiado, dividir
+```
+
+### 3. Ramas y Pull Requests
+
+**Nomenclatura:**
+```
+feature/HU-XX-nombre-corto       ← desde develop, hacia develop
+feature/HUC-XX-nombre            ← HU de rol Cliente
+feature/HUF-XX-nombre            ← HU de rol Funcionario
+hotfix/HU-XX-nombre              ← desde main, hacia main + develop
+```
+
+**Reglas de PR:**
+- Abrirlo solo cuando el desarrollo está **completo y probado localmente**.
+- Asignar revisor y vincular el PR a la tarea de Revisión en Azure DevOps (sección *Development → Add link → GitHub Pull Request*).
+- Responder comentarios de revisión dentro de 24 horas hábiles.
+- No hacer merge propio sin aprobación.
+
+### 4. Gestión del Tiempo y Escalamiento
+
+**Regla de los 30 minutos:** si llevas más de 30 min bloqueado sin avance, escala.
+
+**Cómo escalar** (preparar antes de preguntar):
+1. ¿Qué intento hacer?
+2. ¿Qué ya intenté?
+3. ¿Cuál es el error exacto?
+4. ¿Cuál es mi hipótesis?
+
+**Alertas tempranas:** avisar al líder al 50% del tiempo si no hay progreso visible.
+
+### 5. Azure DevOps — Documentación por Tarea
+
+Cuatro elementos obligatorios antes de cerrar una HU:
+
+| # | Elemento | Responsable | Contenido |
+|---|----------|-------------|-----------|
+| 1 | Requerimiento | Líder/PO | HU, criterios, mockups — no modificar |
+| 2 | Desarrollo | Ingeniero | Link a la rama en GitHub (Development → Add link → GitHub Branch) |
+| 3 | Plan de Pruebas | Ingeniero | Excel `HU_XX_Nombre - MP.xlsx` adjunto en tarea *Plan de pruebas* |
+| 4 | Evidencia | Ingeniero | Doc con capturas por criterio: qué valida, qué se observó, PASA/FALLA |
+
+**Estados del tablero:**
+```
+Nueva → En Progreso → En Revisión → En Pruebas → Cerrada (solo el líder cierra)
+```
+
+### 6. Checklist de Cierre de Tarea
+
+```
+Desarrollo
+- [ ] Cumple exactamente los criterios de aceptación
+- [ ] Sin console.log, código comentado, TODOs pendientes
+- [ ] Rama actualizada con la base (develop o main)
+- [ ] Commits frecuentes bajo la convención
+
+Pull Request
+- [ ] PR abierto con plantilla completa
+- [ ] Revisor asignado
+- [ ] PR vinculado a la HU en Azure DevOps
+
+Azure DevOps
+- [ ] Link a la rama en la HU (sección Desarrollo)
+- [ ] Link al plan de pruebas (sección Plan de Pruebas)
+- [ ] Evidencias con capturas (sección Pruebas)
+- [ ] Tarea en el estado correcto del tablero
+```
