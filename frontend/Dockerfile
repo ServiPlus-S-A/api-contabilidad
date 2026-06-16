@@ -1,7 +1,7 @@
 # =============================================================================
 # api-contabilidad frontend Dockerfile — Multi-stage build (Rule R5)
 # Stage 1 (builder): Node.js — npm install + vite build
-# Stage 2 (runtime): Nginx — serves the static SPA bundle
+# Stage 2 (runtime): nginx-unprivileged — serves the static SPA as non-root
 # =============================================================================
 
 # ── Stage 1: Builder ──────────────────────────────────────────────────────────
@@ -20,26 +20,11 @@ ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 COPY . .
 RUN npm run build
 
-# ── Stage 2: Runtime (Nginx) ──────────────────────────────────────────────────
-FROM nginx:1.27-alpine3.20 AS runtime
+# ── Stage 2: Runtime (nginx-unprivileged — non-root, port 8080 by default) ───
+FROM nginxinc/nginx-unprivileged:1.27-alpine AS runtime
 
-# Security: run as non-root user (nginx group is created by the image)
-RUN addgroup -S contabilidad-ui && \
-    adduser -S contabilidad-ui -G contabilidad-ui
-
-# Copy the built SPA and nginx config
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# Nginx needs to write to these paths; adjust ownership
-RUN chown -R contabilidad-ui:contabilidad-ui \
-    /usr/share/nginx/html \
-    /var/cache/nginx \
-    /var/log/nginx && \
-    touch /var/run/nginx.pid && \
-    chown contabilidad-ui:contabilidad-ui /var/run/nginx.pid
-
-USER contabilidad-ui
 
 EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]
