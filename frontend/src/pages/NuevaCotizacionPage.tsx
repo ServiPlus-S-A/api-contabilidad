@@ -31,7 +31,7 @@ export default function NuevaCotizacionPage() {
       headers: { Authorization: `Bearer ${token ?? ''}` },
     });
     toast.success(`Cotización ${res.data.numero} creada correctamente`);
-    navigate(`/cotizaciones/${String(res.data.id)}`);
+    navigate(`/cotizaciones/${res.data.id}`);
   };
 
   const handleError = () => {

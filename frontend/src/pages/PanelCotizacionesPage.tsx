@@ -59,7 +59,7 @@ export default function PanelCotizacionesPage() {
           {cotizaciones.map((c) => (
             <tr key={c.id}>
               <td>
-                <Link to={`/cotizaciones/${c.id.toString()}`}>{c.numero}</Link>
+                <Link to={`/cotizaciones/${c.id}`}>{c.numero}</Link>
               </td>
               <td>{c.clienteNombre}</td>
               <td>{c.estado}</td>

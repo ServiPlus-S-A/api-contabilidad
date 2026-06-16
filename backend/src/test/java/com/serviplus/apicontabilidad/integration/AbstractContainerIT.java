@@ -4,10 +4,12 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.web.client.ResponseErrorHandler;
+import org.springframework.web.client.DefaultResponseErrorHandler;
 import org.springframework.web.client.RestTemplate;
 import org.testcontainers.containers.MariaDBContainer;
 import org.testcontainers.junit.jupiter.Container;
+
+import java.io.IOException;
 
 // TestRestTemplate was removed in Spring Boot 4.x — use RestTemplate + makeClient()
 public abstract class AbstractContainerIT {
@@ -38,11 +40,12 @@ public abstract class AbstractContainerIT {
 
     protected RestTemplate makeClient() {
         RestTemplate rt = new RestTemplate();
-        rt.setErrorHandler(new ResponseErrorHandler() {
+        // Never throw on 4xx/5xx — tests assert on response status directly
+        rt.setErrorHandler(new DefaultResponseErrorHandler() {
             @Override
-            public boolean hasError(ClientHttpResponse response) { return false; }
-            @Override
-            public void handleError(ClientHttpResponse response) {}
+            public boolean hasError(ClientHttpResponse response) throws IOException {
+                return false;
+            }
         });
         return rt;
     }

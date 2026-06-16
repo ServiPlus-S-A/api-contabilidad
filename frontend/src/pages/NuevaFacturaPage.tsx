@@ -31,7 +31,7 @@ export default function NuevaFacturaPage() {
       headers: { Authorization: `Bearer ${token ?? ''}` },
     });
     toast.success(`Factura ${response.data.numero} creada correctamente`);
-    navigate(`/facturas/${String(response.data.id)}`);
+    navigate(`/facturas/${response.data.id}`);
   };
 
   const handleError = () => {

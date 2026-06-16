@@ -3,12 +3,14 @@
 # Corre en paralelo con pr-develop.yml en cada PR hacia develop.
 #
 # Jobs:
-#   commit-lint     — valida que cada commit del PR cumpla la convención:
-#                     tipo permitido + descripción ≤ 72 chars
-#   backend-spotbugs — SpotBugs analiza bytecode (HIGH priority rompe el build)
+#   commit-lint — valida que cada commit del PR cumpla la convención:
+#                 tipo permitido + descripción ≤ 72 chars
 #
 # Tipos permitidos: feat | fix | refactor | chore | test | docs | style
-# Umbral SpotBugs:  editar backend/pom.xml → spotbugs-maven-plugin → threshold
+#
+# Nota: SpotBugs fue removido temporalmente — incompatible con Spring Boot 4.x
+# (NoClassesFoundToAnalyzeException en target/classes). Agregar de vuelta
+# cuando el plugin soporte la nueva estructura de build de Spring Boot 4.
 # ==============================================================================
 
 name: Code Quality — PR → develop
@@ -25,7 +27,7 @@ jobs:
 
   # ────────────────────────────────────────────────────────────────────────────
   # Commit lint — valida TODOS los commits del PR contra .commitlintrc.yml
-  # fetch-depth: 0 requerido para que el action pueda leer el historial completo
+  # fetch-depth: 0 requerido para leer el historial completo del PR
   # ────────────────────────────────────────────────────────────────────────────
   commit-lint:
     name: Commit lint
@@ -65,40 +67,3 @@ jobs:
             exit 1
           fi
           echo "All commit messages are valid."
-
-  # ────────────────────────────────────────────────────────────────────────────
-  # SpotBugs — analiza bytecode compilado en busca de bugs potenciales
-  # No requiere variables de entorno: solo compila y analiza, no arranca la app
-  # ────────────────────────────────────────────────────────────────────────────
-  backend-spotbugs:
-    name: Backend — SpotBugs static analysis
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up JDK 25 (Temurin)
-        uses: actions/setup-java@v4
-        with:
-          java-version: '25'
-          distribution: 'temurin'
-          cache: 'maven'
-
-      - name: Ensure mvnw is executable
-        run: chmod +x mvnw
-
-      - name: Compile + SpotBugs analysis
-        run: |
-          ./mvnw compile spotbugs:check -B \
-            -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
-
-      - name: Upload SpotBugs report
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: spotbugs-report
-          path: backend/target/spotbugsXml.xml
-          retention-days: 7
