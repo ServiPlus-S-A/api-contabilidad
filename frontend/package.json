@@ -2,7 +2,7 @@
   "name": "contabilidad-frontend",
   "version": "1.0.0",
   "private": true,
-  "description": "React 18 SPA — Módulo de Contabilidad Yummy Inc",
+  "description": "React 18 SPA — Módulo de Contabilidad Serviplus SA",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,6 +10,8 @@
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
     "lint": "eslint src",
+    "format": "prettier --write src",
+    "format:check": "prettier --check src",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -41,6 +43,8 @@
     "eslint": "9.15.0",
     "typescript-eslint": "8.18.2",
     "eslint-plugin-react-hooks": "5.0.0",
-    "eslint-plugin-react-refresh": "0.4.16"
+    "eslint-plugin-react-refresh": "0.4.16",
+    "prettier": "3.4.2",
+    "eslint-config-prettier": "9.1.0"
   }
 }
