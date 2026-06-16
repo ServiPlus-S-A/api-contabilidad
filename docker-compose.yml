@@ -30,10 +30,13 @@ services:
       MARIADB_DATABASE: ${DB_NAME}
       MARIADB_USER: ${DB_USER}
       MARIADB_PASSWORD: ${DB_PASSWORD}
+      MARIADB_INNODB_BUFFER_POOL_SIZE: 64M
     volumes:
       - mariadb-data:/var/lib/mysql
     networks:
       - contabilidad-net
+    mem_limit: 256m
+    memswap_limit: -1
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 10s
@@ -64,6 +67,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    mem_limit: 64m
+    memswap_limit: -1
     expose:
       - "6379"
 
@@ -88,6 +93,8 @@ services:
       timeout: 10s
       retries: 5
       start_period: 20s
+    mem_limit: 128m
+    memswap_limit: -1
     expose:
       - "9000"
       - "9001"
@@ -111,7 +118,8 @@ services:
       MINIO_ENDPOINT: http://minio:9000
       JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m"
       MANAGEMENT_HEALTH_MAIL_ENABLED: "false"
-    mem_limit: 400m
+    mem_limit: 350m
+    memswap_limit: -1
     networks:
       - contabilidad-net
     depends_on:
@@ -141,6 +149,8 @@ services:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL}
     container_name: contabilidad-frontend
     restart: unless-stopped
+    mem_limit: 32m
+    memswap_limit: -1
     networks:
       - contabilidad-net
     depends_on:
@@ -175,6 +185,8 @@ services:
       - ./kong/kong.yml:/etc/kong/kong.yml:ro
     networks:
       - contabilidad-net
+    mem_limit: 150m
+    memswap_limit: -1
     depends_on:
       backend:
         condition: service_healthy
