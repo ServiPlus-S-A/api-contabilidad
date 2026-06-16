@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import axios from 'axios';
@@ -58,7 +58,7 @@ describe('NuevaCotizacionPage', () => {
     await user.type(screen.getAllByRole('spinbutton')[0], '1');
     await user.type(screen.getByRole('textbox', { name: /nombre/i }), 'Cliente Test');
     const dateInput = document.querySelector('input[type="date"]') as HTMLInputElement;
-    await user.type(dateInput, '2027-01-01');
+    fireEvent.change(dateInput, { target: { value: '2027-01-01' } });
     await user.type(screen.getByPlaceholderText('Descripción'), 'Servicio');
     await user.click(screen.getByRole('button', { name: /crear cotización/i }));
 
