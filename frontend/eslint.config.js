@@ -30,5 +30,12 @@ export default tseslint.config(
       '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
     },
   },
+  // Test files: disable unbound-method — false positive with vitest mocked functions
+  {
+    files: ['**/*.test.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/unbound-method': 'off',
+    },
+  },
   prettierConfig,
 )

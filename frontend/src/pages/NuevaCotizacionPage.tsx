@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import type { CotizacionFormValues, CotizacionResponse } from '../types.ts';
 
-const API = (import.meta.env['VITE_API_BASE_URL'] as string | undefined) ?? '/api/v1';
+const API = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
 
 export default function NuevaCotizacionPage() {
   const navigate = useNavigate();
@@ -31,7 +31,7 @@ export default function NuevaCotizacionPage() {
       headers: { Authorization: `Bearer ${token ?? ''}` },
     });
     toast.success(`Cotización ${res.data.numero} creada correctamente`);
-    void navigate(`/cotizaciones/${res.data.id}`);
+    navigate(`/cotizaciones/${String(res.data.id)}`);
   };
 
   const handleError = () => {

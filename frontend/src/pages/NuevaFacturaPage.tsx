@@ -4,7 +4,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import type { FacturaFormValues, FacturaResponse } from '../types.ts';
 
-const API = (import.meta.env['VITE_API_BASE_URL'] as string | undefined) ?? '/api/v1';
+const API = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
 
 export default function NuevaFacturaPage() {
   const navigate = useNavigate();
@@ -31,7 +31,7 @@ export default function NuevaFacturaPage() {
       headers: { Authorization: `Bearer ${token ?? ''}` },
     });
     toast.success(`Factura ${response.data.numero} creada correctamente`);
-    void navigate(`/facturas/${response.data.id}`);
+    navigate(`/facturas/${String(response.data.id)}`);
   };
 
   const handleError = () => {
