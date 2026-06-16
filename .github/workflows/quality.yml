@@ -1,0 +1,60 @@
+# ==============================================================================
+# Code Quality — PR → develop
+# Corre en paralelo con pr-develop.yml en cada PR hacia develop.
+#
+# Análisis estático con SpotBugs (HIGH priority bugs rompen el build).
+# El reporte XML se sube como artefacto para revisar los hallazgos.
+#
+# Para ajustar el umbral de severidad editar backend/pom.xml:
+#   spotbugs-maven-plugin → configuration → threshold
+#   Valores: High | Medium | Low | Ignore
+# ==============================================================================
+
+name: Code Quality — PR → develop
+
+on:
+  pull_request:
+    branches: [develop]
+
+concurrency:
+  group: quality-${{ github.head_ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Backend — SpotBugs analiza bytecode compilado en busca de bugs potenciales
+  # No requiere variables de entorno: solo compila y analiza, no arranca la app
+  # ────────────────────────────────────────────────────────────────────────────
+  backend-spotbugs:
+    name: Backend — SpotBugs static analysis
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 25 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Ensure mvnw is executable
+        run: chmod +x mvnw
+
+      - name: Compile + SpotBugs analysis
+        run: |
+          ./mvnw compile spotbugs:check -B \
+            -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+
+      - name: Upload SpotBugs report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: spotbugs-report
+          path: backend/target/spotbugsXml.xml
+          retention-days: 7

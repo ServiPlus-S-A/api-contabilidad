@@ -1,0 +1,20 @@
+# ==============================================================================
+# docker-compose.prod.yml — overlay de producción
+#
+# Reemplaza los bloques build: del compose base con imágenes pre-construidas
+# en Docker Hub. Usar siempre junto con docker-compose.yml:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Variables de entorno requeridas en EC2 (exportar antes del comando o en .env):
+#   DOCKERHUB_USERNAME — usuario de Docker Hub
+#   IMAGE_TAG          — SHA del commit a desplegar (o "latest")
+# ==============================================================================
+
+services:
+  backend:
+    image: ${DOCKERHUB_USERNAME}/api-contabilidad-backend:${IMAGE_TAG:-latest}
+
+  frontend:
+    image: ${DOCKERHUB_USERNAME}/api-contabilidad-frontend:${IMAGE_TAG:-latest}
