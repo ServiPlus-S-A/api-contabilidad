@@ -22,7 +22,7 @@ services:
   # MariaDB 11.4 LTS — Primary persistence (ADR-M1: Data Layer)
   # ---------------------------------------------------------------------------
   mariadb:
-    image: mariadb:11.4-jammy
+    image: mariadb:11.4
     container_name: contabilidad-mariadb
     restart: unless-stopped
     environment:
