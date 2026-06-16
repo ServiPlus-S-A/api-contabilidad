@@ -186,6 +186,7 @@ Descripción concisa.
 ### Commit rule
 One commit per logical unit of work. Never go more than 2 hours without committing.
 Description ≤ 72 chars. Never mix Spanish/English in the same project.
+**Never add Co-Authored-By trailers** — Claude must not sign commits as co-author under any circumstances.
 
 ## Configuration — AppProperties structure
 

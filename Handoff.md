@@ -235,6 +235,8 @@ update                      # sin tipo, sin descripción
 feat: added login, fixed dashboard bug, updated styles   # demasiado, dividir
 ```
 
+> **Regla absoluta para Claude:** nunca agregar `Co-Authored-By:` en ningún commit. Los commits pertenecen exclusivamente al autor humano.
+
 ### 3. Ramas y Pull Requests
 
 **Nomenclatura:**
