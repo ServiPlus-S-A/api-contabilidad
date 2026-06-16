@@ -4,12 +4,15 @@ import com.serviplus.apicontabilidad.config.AppProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -33,6 +36,7 @@ public class SecurityConfig {
     private final AppProperties appProperties;
 
     @Bean
+    @Order(1)
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
@@ -42,6 +46,11 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated()
+                )
+                // Spring Security 6+ returns 403 by default for unauthenticated requests;
+                // return 401 instead so clients can distinguish "no credentials" from "wrong role"
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
