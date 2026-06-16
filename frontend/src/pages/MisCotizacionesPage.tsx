@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import axios from 'axios';
 import type { CotizacionResponse } from '../types.ts';
 
-const API = (import.meta.env['VITE_API_BASE_URL'] as string | undefined) ?? '/api/v1';
+const API = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
 
 export default function MisCotizacionesPage() {
   const [cotizaciones, setCotizaciones] = useState<CotizacionResponse[]>([]);

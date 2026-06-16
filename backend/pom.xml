@@ -20,14 +20,8 @@
         <minio.version>8.5.12</minio.version>
         <pdfbox.version>3.0.3</pdfbox.version>
         <springdoc.version>2.8.3</springdoc.version>
-        <jacoco.version>0.8.12</jacoco.version>
-
-        <!-- SonarCloud -->
-        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
-        <sonar.java.source>${java.version}</sonar.java.source>
-        <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
-        <sonar.sources>src/main/java</sonar.sources>
-        <sonar.tests>src/test/java</sonar.tests>
+        <!-- Spring Boot 4.0.x BOM pins 0.8.15; set explicitly to silence Maven warning -->
+        <jacoco.version>0.8.15</jacoco.version>
     </properties>
 
     <dependencyManagement>
@@ -212,6 +206,22 @@
     <build>
         <plugins>
 
+            <!-- Explicit Lombok annotation processor path — required for Spring Boot 4.x / Java 25.
+                 Without this, javac silently skips annotation processing and getters/log are not generated. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+
             <!-- Unit tests: exclude *IT.java so ./mvnw test runs fast (no containers) -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -295,11 +305,16 @@
                 </executions>
             </plugin>
 
-            <!-- SonarCloud -->
+            <!-- SpotBugs static analysis — threshold=High: solo bugs de prioridad alta rompen el build -->
             <plugin>
-                <groupId>org.sonarsource.scanner.maven</groupId>
-                <artifactId>sonar-maven-plugin</artifactId>
-                <version>4.0.0.4121</version>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>4.8.6.4</version>
+                <configuration>
+                    <effort>Max</effort>
+                    <threshold>High</threshold>
+                    <failOnError>false</failOnError>
+                </configuration>
             </plugin>
 
             <!-- Asciidoctor for REST Docs -->
