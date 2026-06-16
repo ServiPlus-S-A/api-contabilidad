@@ -1,27 +1,33 @@
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { toast } from 'react-toastify'
-import axios from 'axios'
-import type { CotizacionResponse } from '../types.ts'
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import axios from 'axios';
+import type { CotizacionResponse } from '../types.ts';
 
-const API = import.meta.env['VITE_API_BASE_URL'] as string | undefined ?? '/api/v1'
+const API = (import.meta.env['VITE_API_BASE_URL'] as string | undefined) ?? '/api/v1';
 
 export default function MisCotizacionesPage() {
-  const [cotizaciones, setCotizaciones] = useState<CotizacionResponse[]>([])
-  const [loading, setLoading] = useState(true)
+  const [cotizaciones, setCotizaciones] = useState<CotizacionResponse[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token')
+    const token = localStorage.getItem('access_token');
     void axios
       .get<CotizacionResponse[]>(`${API}/cotizaciones`, {
         headers: { Authorization: `Bearer ${token ?? ''}` },
       })
-      .then((res) => { setCotizaciones(res.data) })
-      .catch(() => { toast.error('Error al cargar cotizaciones') })
-      .finally(() => { setLoading(false) })
-  }, [])
+      .then((res) => {
+        setCotizaciones(res.data);
+      })
+      .catch(() => {
+        toast.error('Error al cargar cotizaciones');
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
 
-  if (loading) return <p>Cargando cotizaciones...</p>
+  if (loading) return <p>Cargando cotizaciones...</p>;
 
   return (
     <main style={{ maxWidth: 900, margin: '2rem auto', padding: '0 1rem' }}>
@@ -38,8 +44,12 @@ export default function MisCotizacionesPage() {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
-              <th>Número</th><th>Cliente</th><th>Estado</th>
-              <th>Total</th><th>Vigencia</th><th>Acciones</th>
+              <th>Número</th>
+              <th>Cliente</th>
+              <th>Estado</th>
+              <th>Total</th>
+              <th>Vigencia</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -50,12 +60,14 @@ export default function MisCotizacionesPage() {
                 <td>{c.estado}</td>
                 <td>₡{c.total.toFixed(2)}</td>
                 <td>{c.fechaVigencia}</td>
-                <td><Link to={`/cotizaciones/${c.id}`}>Ver detalle</Link></td>
+                <td>
+                  <Link to={`/cotizaciones/${c.id}`}>Ver detalle</Link>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       )}
     </main>
-  )
+  );
 }
