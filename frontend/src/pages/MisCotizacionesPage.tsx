@@ -61,7 +61,7 @@ export default function MisCotizacionesPage() {
                 <td>₡{c.total.toFixed(2)}</td>
                 <td>{c.fechaVigencia}</td>
                 <td>
-                  <Link to={`/cotizaciones/${c.id.toString()}`}>Ver detalle</Link>
+                  <Link to={`/cotizaciones/${c.id}`}>Ver detalle</Link>
                 </td>
               </tr>
             ))}
