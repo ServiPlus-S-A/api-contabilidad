@@ -12,7 +12,7 @@
     <artifactId>api-contabilidad</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>backend</name>
-    <description>API de Contabilidad — Yummy Inc</description>
+    <description>API de Contabilidad — Serviplus SA</description>
 
     <properties>
         <java.version>25</java.version>
@@ -21,7 +21,28 @@
         <pdfbox.version>3.0.3</pdfbox.version>
         <springdoc.version>2.8.3</springdoc.version>
         <jacoco.version>0.8.12</jacoco.version>
+
+        <!-- SonarCloud -->
+        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+        <sonar.java.source>${java.version}</sonar.java.source>
+        <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+        <sonar.sources>src/main/java</sonar.sources>
+        <sonar.tests>src/test/java</sonar.tests>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Explicit BOM so IDEs (m2e) can resolve testcontainers versions
+                 without having to traverse the Spring Boot parent chain. -->
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-bom</artifactId>
+                <version>1.21.1</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
 
@@ -272,6 +293,13 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+
+            <!-- SonarCloud -->
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>4.0.0.4121</version>
             </plugin>
 
             <!-- Asciidoctor for REST Docs -->

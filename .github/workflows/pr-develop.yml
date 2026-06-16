@@ -1,0 +1,149 @@
+# ==============================================================================
+# PR → develop — único pipeline de CI
+# Corre SOLO en pull requests que apunten a la rama develop.
+#
+# Jobs (paralelos):
+#   backend-checks  — unit tests (*Test.java) + análisis SonarCloud + JaCoCo
+#   frontend-checks — Prettier + TypeScript + ESLint + Vitest + build
+#
+# Secrets requeridos (Settings → Secrets and variables → Actions → Secrets):
+#   SONAR_TOKEN         — generado en https://sonarcloud.io/account/security/
+#
+# Variables requeridas (Settings → Secrets and variables → Actions → Variables):
+#   SONAR_PROJECT_KEY   — ej. mi-org_api-contabilidad
+#   SONAR_ORGANIZATION  — ej. mi-org  (slug de tu organización en SonarCloud)
+#
+# Nota: SonarCloud es gratuito para repos públicos.
+#       Repos privados requieren plan de pago en SonarCloud.
+# ==============================================================================
+
+name: PR → develop
+
+on:
+  pull_request:
+    branches: [develop]
+
+concurrency:
+  group: pr-develop-${{ github.head_ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Backend — unit tests (*Test.java) + SonarCloud
+  # JaCoCo genera el reporte XML en target/site/jacoco/jacoco.xml durante "test"
+  # Sonar lee ese reporte y lo sube a SonarCloud.
+  # fetch-depth: 0 requerido para que Sonar calcule blame y new-code correctamente.
+  # ────────────────────────────────────────────────────────────────────────────
+  backend-checks:
+    name: Backend — unit tests + Sonar
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 25 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Ensure mvnw is executable
+        run: chmod +x mvnw
+
+      - name: Unit tests + JaCoCo report
+        run: |
+          ./mvnw test -B \
+            -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+        env:
+          JWT_SECRET: test-secret-minimum-32-chars-for-hmac
+          MINIO_ENDPOINT: http://localhost:9000
+          MINIO_ACCESS_KEY: test
+          MINIO_SECRET_KEY: test
+          MINIO_BUCKET: test-bucket
+          EMAIL_FROM: ci@test.com
+          SMTP_HOST: localhost
+          SMTP_PORT: 25
+          CORS_ALLOWED_ORIGINS: http://localhost:5173
+
+      - name: SonarCloud analysis
+        run: |
+          ./mvnw sonar:sonar -B \
+            -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY }} \
+            -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }} \
+            -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload JaCoCo report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: jacoco-unit-report
+          path: backend/target/site/jacoco/
+          retention-days: 7
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Frontend — Prettier + TypeScript + ESLint + Vitest + build
+  # ────────────────────────────────────────────────────────────────────────────
+  frontend-checks:
+    name: Frontend — format, lint, type-check, tests, build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 20 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Cache npm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json', 'frontend/package.json') }}
+          restore-keys: npm-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            echo "Lock file found — reproducible install with npm ci"
+            npm ci
+          else
+            echo "⚠️  No package-lock.json committed. Run 'npm install' locally and commit it!"
+            npm install
+          fi
+
+      - name: Prettier format check
+        run: npm run format:check
+
+      - name: TypeScript strict type-check
+        run: npm run type-check
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Vitest unit tests with coverage
+        run: npm run test:coverage
+
+      - name: Upload Vitest coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vitest-coverage
+          path: frontend/coverage/
+          retention-days: 7
+
+      - name: Production build (tsc + vite)
+        run: npm run build
