@@ -2,12 +2,13 @@
 # Code Quality — PR → develop
 # Corre en paralelo con pr-develop.yml en cada PR hacia develop.
 #
-# Análisis estático con SpotBugs (HIGH priority bugs rompen el build).
-# El reporte XML se sube como artefacto para revisar los hallazgos.
+# Jobs:
+#   commit-lint     — valida que cada commit del PR cumpla la convención:
+#                     tipo permitido + descripción ≤ 72 chars
+#   backend-spotbugs — SpotBugs analiza bytecode (HIGH priority rompe el build)
 #
-# Para ajustar el umbral de severidad editar backend/pom.xml:
-#   spotbugs-maven-plugin → configuration → threshold
-#   Valores: High | Medium | Low | Ignore
+# Tipos permitidos: feat | fix | refactor | chore | test | docs | style
+# Umbral SpotBugs:  editar backend/pom.xml → spotbugs-maven-plugin → threshold
 # ==============================================================================
 
 name: Code Quality — PR → develop
@@ -23,7 +24,24 @@ concurrency:
 jobs:
 
   # ────────────────────────────────────────────────────────────────────────────
-  # Backend — SpotBugs analiza bytecode compilado en busca de bugs potenciales
+  # Commit lint — valida TODOS los commits del PR contra .commitlintrc.yml
+  # fetch-depth: 0 requerido para que el action pueda leer el historial completo
+  # ────────────────────────────────────────────────────────────────────────────
+  commit-lint:
+    name: Commit lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: wagoid/commitlint-action@v6
+        with:
+          configFile: .commitlintrc.yml
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # SpotBugs — analiza bytecode compilado en busca de bugs potenciales
   # No requiere variables de entorno: solo compila y analiza, no arranca la app
   # ────────────────────────────────────────────────────────────────────────────
   backend-spotbugs:
