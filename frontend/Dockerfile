@@ -41,5 +41,5 @@ RUN chown -R contabilidad-ui:contabilidad-ui \
 
 USER contabilidad-ui
 
-EXPOSE 80
+EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]

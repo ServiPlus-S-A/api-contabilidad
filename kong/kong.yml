@@ -40,8 +40,8 @@ services:
           origins:
             - "http://localhost:5173"
             - "http://localhost:8000"
-            - "http://18.224.27.43"
-            - "http://18.224.27.43:8000"
+            - "http://18.222.181.169"
+            - "http://18.222.181.169:8000"
           methods:
             - GET
             - POST
@@ -68,7 +68,7 @@ services:
   # Frontend — Nginx on port 80
   # ============================================================================
   - name: frontend-service
-    url: http://frontend:80
+    url: http://frontend:8080
     connect_timeout: 5000
     read_timeout: 30000
     write_timeout: 30000
