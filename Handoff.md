@@ -27,7 +27,6 @@ Documento de continuidad para retomar el proyecto sin re-leer el código.
 | Backend unit tests | 16 tests Mockito: CotizacionServiceTest (8), FacturaServiceTest (5), PagoServiceTest (6) |
 | Backend integration | Testcontainers MariaDB 1.21.1 (BOM explícito en pom.xml): ApplicationContextIT, CotizacionIT, FacturaIT |
 | CI GitHub Actions | `pr-develop.yml` — corre solo en PRs a `develop`; jobs: backend-checks + frontend-checks |
-| SonarCloud | Backend: sonar-maven-plugin 4.0.0.4121 + JaCoCo XML; requiere secrets SONAR_TOKEN + vars en GitHub |
 | Prettier | Frontend: prettier 3.4.2 + eslint-config-prettier 9.1.0; config en `frontend/.prettierrc` |
 | Lineamientos | Documento completo en sección final de este archivo; resumen en CLAUDE.md |
 | .gitattributes | `* text=auto` en raíz; CRLF normalizado a LF en commit |
@@ -39,8 +38,7 @@ Documento de continuidad para retomar el proyecto sin re-leer el código.
 | Email | Email real del cliente (hardcoded placeholder en EmailCotizacionTask) | Media |
 | PDF | Layout completo con tabla de líneas de detalle | Media |
 | Kong JWT | Consumers con JWT credentials para producción | Baja |
-| SonarCloud | Crear proyecto en sonarcloud.io y configurar secrets/vars en GitHub repo | Media |
-| Rama develop | Crear la rama `develop` en GitHub para que el CI se active | Alta |
+| Rama develop | Creada — el CI se activa abriendo PRs hacia ella | ✅ |
 
 ---
 

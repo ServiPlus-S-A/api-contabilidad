@@ -240,12 +240,7 @@ JwtTestHelper generates signed tokens for test requests.
 
 | Workflow           | Triggers          | Jobs                                                    |
 | ------------------ | ----------------- | ------------------------------------------------------- |
-| `pr-develop.yml`   | PR → develop only | backend-checks (unit + Sonar), frontend-checks (Prettier + TS + ESLint + Vitest + build) |
-
-Required GitHub secrets/vars for Sonar:
-- Secret `SONAR_TOKEN` — from sonarcloud.io
-- Variable `SONAR_PROJECT_KEY` — e.g. `org_api-contabilidad`
-- Variable `SONAR_ORGANIZATION` — e.g. `org-slug`
+| `pr-develop.yml`   | PR → develop only | backend-checks (unit + JaCoCo), frontend-checks (Prettier + TS + ESLint + Vitest + build) |
 
 ## What NOT to do
 
