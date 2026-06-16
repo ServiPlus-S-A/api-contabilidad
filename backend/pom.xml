@@ -206,6 +206,22 @@
     <build>
         <plugins>
 
+            <!-- Explicit Lombok annotation processor path — required for Spring Boot 4.x / Java 25.
+                 Without this, javac silently skips annotation processing and getters/log are not generated. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+
             <!-- Unit tests: exclude *IT.java so ./mvnw test runs fast (no containers) -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
