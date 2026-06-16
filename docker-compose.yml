@@ -22,7 +22,7 @@ services:
   # MariaDB 11.4 LTS — Primary persistence (ADR-M1: Data Layer)
   # ---------------------------------------------------------------------------
   mariadb:
-    image: mariadb:11.4-jammy
+    image: mariadb:11.4
     container_name: contabilidad-mariadb
     restart: unless-stopped
     environment:
@@ -109,6 +109,9 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       MINIO_ENDPOINT: http://minio:9000
+      JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m"
+      MANAGEMENT_HEALTH_MAIL_ENABLED: "false"
+    mem_limit: 400m
     networks:
       - contabilidad-net
     depends_on:
@@ -144,12 +147,12 @@ services:
       backend:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:80 || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080 || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 3
     expose:
-      - "80"
+      - "8080"
 
   # ---------------------------------------------------------------------------
   # Kong Gateway 3.8 — DB-less mode (ADR-M1 API Gateway: JWT, RBAC, CORS,

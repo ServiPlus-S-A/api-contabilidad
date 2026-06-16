@@ -7,8 +7,8 @@
 #   docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
 #   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 #
-# Variables de entorno requeridas en EC2 (exportar antes del comando o en .env):
-#   DOCKERHUB_USERNAME — usuario de Docker Hub
+# Variables de entorno requeridas en EC2 (.env debe incluirlas):
+#   DOCKERHUB_USERNAME — usuario de Docker Hub (ej. manuelr12)
 #   IMAGE_TAG          — SHA del commit a desplegar (o "latest")
 # ==============================================================================
 
