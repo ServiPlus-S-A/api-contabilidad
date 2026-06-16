@@ -61,7 +61,9 @@ describe('NuevaCotizacionPage', () => {
     fireEvent.change(dateInput, { target: { value: '2027-01-01' } });
     await user.type(screen.getByPlaceholderText('Descripción'), 'Servicio');
     // precioUnitario defaults to 0 which fails min:0.01 — set it to a valid value
-    fireEvent.change(screen.getAllByRole('spinbutton')[2], { target: { value: '100', valueAsNumber: 100 } });
+    fireEvent.change(screen.getAllByRole('spinbutton')[2], {
+      target: { value: '100', valueAsNumber: 100 },
+    });
     await user.click(screen.getByRole('button', { name: /crear cotización/i }));
 
     // Assert
