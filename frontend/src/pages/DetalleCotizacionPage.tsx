@@ -1,45 +1,66 @@
-import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { toast } from 'react-toastify'
-import axios from 'axios'
-import type { CotizacionResponse } from '../types.ts'
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import axios from 'axios';
+import type { CotizacionResponse } from '../types.ts';
 
-const API = import.meta.env['VITE_API_BASE_URL'] as string | undefined ?? '/api/v1'
+const API = (import.meta.env['VITE_API_BASE_URL'] as string | undefined) ?? '/api/v1';
 
 export default function DetalleCotizacionPage() {
-  const { id } = useParams<{ id: string }>()
-  const [cotizacion, setCotizacion] = useState<CotizacionResponse | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { id } = useParams<{ id: string }>();
+  const [cotizacion, setCotizacion] = useState<CotizacionResponse | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!id) return
-    const token = localStorage.getItem('access_token')
+    if (!id) return;
+    const token = localStorage.getItem('access_token');
     void axios
       .get<CotizacionResponse>(`${API}/cotizaciones/${id}`, {
         headers: { Authorization: `Bearer ${token ?? ''}` },
       })
-      .then((res) => { setCotizacion(res.data) })
-      .catch(() => { toast.error('Error al cargar la cotización') })
-      .finally(() => { setLoading(false) })
-  }, [id])
+      .then((res) => {
+        setCotizacion(res.data);
+      })
+      .catch(() => {
+        toast.error('Error al cargar la cotización');
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [id]);
 
-  if (loading) return <p>Cargando...</p>
-  if (!cotizacion) return <p>Cotización no encontrada</p>
+  if (loading) return <p>Cargando...</p>;
+  if (!cotizacion) return <p>Cotización no encontrada</p>;
 
   return (
     <main style={{ maxWidth: 800, margin: '2rem auto', padding: '0 1rem' }}>
       <h1>Cotización {cotizacion.numero}</h1>
-      <p><strong>Estado:</strong> {cotizacion.estado}</p>
-      <p><strong>Cliente:</strong> {cotizacion.clienteNombre}</p>
-      <p><strong>Vigencia hasta:</strong> {cotizacion.fechaVigencia}</p>
-      <p><strong>Total:</strong> ₡{cotizacion.total.toFixed(2)}</p>
-      {cotizacion.notas && <p><strong>Notas:</strong> {cotizacion.notas}</p>}
+      <p>
+        <strong>Estado:</strong> {cotizacion.estado}
+      </p>
+      <p>
+        <strong>Cliente:</strong> {cotizacion.clienteNombre}
+      </p>
+      <p>
+        <strong>Vigencia hasta:</strong> {cotizacion.fechaVigencia}
+      </p>
+      <p>
+        <strong>Total:</strong> ₡{cotizacion.total.toFixed(2)}
+      </p>
+      {cotizacion.notas && (
+        <p>
+          <strong>Notas:</strong> {cotizacion.notas}
+        </p>
+      )}
 
       <h2>Líneas</h2>
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
           <tr>
-            <th>Descripción</th><th>Cantidad</th><th>Precio unit.</th><th>Subtotal</th>
+            <th>Descripción</th>
+            <th>Cantidad</th>
+            <th>Precio unit.</th>
+            <th>Subtotal</th>
           </tr>
         </thead>
         <tbody>
@@ -54,19 +75,25 @@ export default function DetalleCotizacionPage() {
         </tbody>
         <tfoot>
           <tr>
-            <td colSpan={3}><strong>Subtotal</strong></td>
+            <td colSpan={3}>
+              <strong>Subtotal</strong>
+            </td>
             <td>₡{cotizacion.subtotal.toFixed(2)}</td>
           </tr>
           <tr>
-            <td colSpan={3}><strong>Impuesto (13%)</strong></td>
+            <td colSpan={3}>
+              <strong>Impuesto (13%)</strong>
+            </td>
             <td>₡{cotizacion.impuesto.toFixed(2)}</td>
           </tr>
           <tr>
-            <td colSpan={3}><strong>TOTAL</strong></td>
+            <td colSpan={3}>
+              <strong>TOTAL</strong>
+            </td>
             <td>₡{cotizacion.total.toFixed(2)}</td>
           </tr>
         </tfoot>
       </table>
     </main>
-  )
+  );
 }
