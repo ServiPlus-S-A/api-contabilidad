@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import axios from 'axios';
 import type { CotizacionResponse } from '../types.ts';
 
-const API = (import.meta.env['VITE_API_BASE_URL'] as string | undefined) ?? '/api/v1';
+const API = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
 
 export default function PanelCotizacionesPage() {
   const [cotizaciones, setCotizaciones] = useState<CotizacionResponse[]>([]);
@@ -59,7 +59,7 @@ export default function PanelCotizacionesPage() {
           {cotizaciones.map((c) => (
             <tr key={c.id}>
               <td>
-                <Link to={`/cotizaciones/${c.id}`}>{c.numero}</Link>
+                <Link to={`/cotizaciones/${c.id.toString()}`}>{c.numero}</Link>
               </td>
               <td>{c.clienteNombre}</td>
               <td>{c.estado}</td>
