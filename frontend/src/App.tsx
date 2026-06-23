@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import RouteGuard from './components/RouteGuard.tsx';
+import LoginPage from './pages/LoginPage.tsx';
 import NuevaFacturaPage from './pages/NuevaFacturaPage.tsx';
 import VistaPreviewFacturaPage from './pages/VistaPreviewFacturaPage.tsx';
 import NuevaCotizacionPage from './pages/NuevaCotizacionPage.tsx';
@@ -12,6 +13,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Navigate to="/cotizaciones" replace />} />
+        <Route path="/login" element={<LoginPage />} />
 
         <Route element={<RouteGuard />}>
           <Route path="/facturas/nueva" element={<NuevaFacturaPage />} />
