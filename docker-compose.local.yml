@@ -1,0 +1,42 @@
+# =============================================================================
+# Local development overrides
+#
+# Use this file together with docker-compose.yml when running locally.
+# It exposes DB/Redis ports for GUI tools and uses a separate DB name
+# so local data never mixes with production.
+#
+# Run:
+#   cp .env.local.example .env.local          (first time only)
+#   docker compose -f docker-compose.yml -f docker-compose.local.yml \
+#     --env-file .env.local up --build
+# =============================================================================
+
+services:
+
+  mariadb:
+    environment:
+      MARIADB_DATABASE: contabilidad_local
+    ports:
+      - "3306:3306"       # expose so DBeaver / TablePlus can connect
+
+  redis:
+    ports:
+      - "6379:6379"       # expose for Redis Insight or redis-cli locally
+
+  minio:
+    ports:
+      - "9000:9000"
+      - "9001:9001"       # MinIO web console → http://localhost:9001
+
+  backend:
+    env_file:
+      - .env.local        # reads local secrets instead of .env
+    environment:
+      DB_NAME: contabilidad_local
+      LOG_LEVEL: DEBUG
+      JPA_SHOW_SQL: "true"
+
+  frontend:
+    build:
+      args:
+        VITE_API_BASE_URL: http://localhost:8000

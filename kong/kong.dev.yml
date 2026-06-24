@@ -2,21 +2,13 @@ _format_version: "3.0"
 _transform: true
 
 # ==============================================================================
-# Kong Gateway 3.8 — DB-less declarative configuration (ADR-S1, ADR-M1)
-#
-# Security strategy:
-#   Kong layer  → CORS, Rate Limiting, request logging
-#   Backend layer → JWT validation, RBAC (Spring Security)
-#
-# Production note: add the JWT plugin here with pre-seeded consumers to add
-# a second validation layer. Example at end of file (commented out).
+# Kong Gateway 3.8 — DB-less config for DEV / staging environment
+# Identical to kong.yml but adds the dev proxy origin (:8100) to CORS.
+# Mounted via docker-compose.dev.yml override.
 # ==============================================================================
 
 services:
 
-  # ============================================================================
-  # Backend — Spring Boot 4.0 on port 8080
-  # ============================================================================
   - name: backend-service
     url: http://backend:8080
     connect_timeout: 10000
@@ -39,9 +31,8 @@ services:
         config:
           origins:
             - "http://localhost:5173"
-            - "http://localhost:8000"
-            - "http://$(PUBLIC_HOST)"
-            - "http://$(PUBLIC_HOST):8000"
+            - "http://localhost:8100"
+            - "http://$(PUBLIC_HOST):8100"
           methods:
             - GET
             - POST
@@ -64,9 +55,6 @@ services:
       - name: request-termination
         enabled: false
 
-  # ============================================================================
-  # Frontend — Nginx on port 80
-  # ============================================================================
   - name: frontend-service
     url: http://frontend:8080
     connect_timeout: 5000
@@ -80,22 +68,3 @@ services:
         methods:
           - GET
           - OPTIONS
-
-# ==============================================================================
-# Production JWT plugin example (uncomment and configure when auth service
-# is integrated — requires consumer records with jwt_secrets):
-#
-# consumers:
-#   - username: serviplus-system
-#     jwt_secrets:
-#       - key: serviplus-issuer
-#         secret: <SAME_VALUE_AS_JWT_SECRET_ENV_VAR>
-#         algorithm: HS256
-#
-# Then add to api-route plugins:
-#   - name: jwt
-#     config:
-#       claims_to_verify:
-#         - exp
-#       key_claim_name: iss
-# ==============================================================================

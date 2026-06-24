@@ -1,0 +1,54 @@
+# =============================================================================
+# Development / staging environment overrides
+#
+# Runs on the same EC2 as production but completely isolated:
+#   - Separate container names (contabilidad-dev-*)
+#   - Separate volumes (contabilidad-dev_mariadb-data, etc.)
+#   - Separate database: contabilidad_dev
+#   - Kong exposed on port 8100 (prod uses 8000)
+#   - Images tagged :develop (prod uses :latest)
+#
+# First-time setup on EC2:
+#   cp .env.dev.example /home/ubuntu/api-contabilidad-dev/.env.dev
+#
+# Start:
+#   docker-compose -p contabilidad-dev \
+#     -f docker-compose.yml -f docker-compose.dev.yml \
+#     --env-file .env.dev up -d
+# =============================================================================
+
+services:
+
+  mariadb:
+    container_name: contabilidad-dev-mariadb
+    environment:
+      MARIADB_DATABASE: contabilidad_dev
+
+  redis:
+    container_name: contabilidad-dev-redis
+
+  minio:
+    container_name: contabilidad-dev-minio
+
+  backend:
+    container_name: contabilidad-dev-backend
+    image: ${DOCKERHUB_USERNAME}/api-contabilidad-backend:${IMAGE_TAG:-develop}
+    env_file:
+      - .env.dev
+    environment:
+      DB_NAME: contabilidad_dev
+      LOG_LEVEL: DEBUG
+      JPA_SHOW_SQL: "true"
+
+  frontend:
+    container_name: contabilidad-dev-frontend
+    image: ${DOCKERHUB_USERNAME}/api-contabilidad-frontend:${IMAGE_TAG:-develop}
+
+  kong:
+    container_name: contabilidad-dev-kong
+    environment:
+      KONG_DECLARATIVE_CONFIG: /etc/kong/kong.dev.yml
+    volumes:
+      - ./kong/kong.dev.yml:/etc/kong/kong.dev.yml:ro
+    ports:
+      - "8100:8000"     # dev proxy → http://<EC2_IP>:8100
