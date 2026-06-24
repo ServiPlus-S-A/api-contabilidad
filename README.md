@@ -1,91 +1,126 @@
-# api-contabilidad — Serviplus SA
+# Contabilidad — Serviplus SA
 
-Módulo de contabilidad del sistema de gestión empresarial Serviplus SA.
-Gestiona **Facturas**, **Cotizaciones** y **Pagos (Abonos)** a través de una API REST + SPA React.
+![CI Backend](https://github.com/ServiPlus-S-A/api-contabilidad/actions/workflows/pr-develop.yml/badge.svg)
+![CD Main](https://github.com/ServiPlus-S-A/api-contabilidad/actions/workflows/cd-main.yml/badge.svg)
+![Coverage](https://img.shields.io/badge/coverage-80%25-brightgreen)
+![Java](https://img.shields.io/badge/Java-25-orange?logo=openjdk)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.6-brightgreen?logo=springboot)
+![React](https://img.shields.io/badge/React-18.3-61DAFB?logo=react)
+![MariaDB](https://img.shields.io/badge/MariaDB-11.4-003545?logo=mariadb)
+![Kong](https://img.shields.io/badge/Kong-3.8-blue?logo=kong)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker)
 
-**Architecture**: ADR-M1 (Strict Layered) · ADR-M2 (REST API) · ADR-M3 (Expanded MVC) · ADR-S1 (Docker Compose) · ADR-S3 (Audit Log)
-
----
-
-## Prerequisites
-
-| Tool | Minimum Version |
-|------|-----------------|
-| Docker | 27.x |
-| Docker Compose | 2.x (plugin — use `docker compose`, not `docker-compose`) |
-| Java (local dev) | 21 LTS |
-| Maven (local dev) | 3.9.x (or use `./mvnw`) |
-| Node.js (local dev) | 20.18 LTS |
+Accounting microservice for Serviplus SA. Manages **quotes (cotizaciones)**, **invoices (facturas)**, and **partial payments (abonos)** through a REST API + React SPA, deployed behind Kong Gateway.
 
 ---
 
-## Quick Start (Docker)
+## Tech Stack
 
-```bash
-# 1. Clone the repository
-git clone <repo-url> api-contabilidad
-cd api-contabilidad
+| Layer | Technology | Version |
+|-------|-----------|---------|
+| API Gateway | Kong (DB-less) | 3.8 |
+| Backend | Spring Boot + Java | 4.0.6 / 25 |
+| Frontend | React + Vite | 18.3 / 5 |
+| Database | MariaDB | 11.4 |
+| Cache / Async | Redis | 7.4 |
+| Object Storage | MinIO | 2024-12-18 |
+| Migrations | Flyway | — |
+| Auth | JWT (jjwt 0.12) | — |
+| API Docs | springdoc OpenAPI | 2.8.3 |
+| Containerization | Docker Compose | — |
 
-# 2. Create your environment file from the template
-cp .env.example .env
-# Edit .env and fill in all required values (DB_PASSWORD, JWT_SECRET, etc.)
+---
 
-# 3. Start all services
-docker compose up --build
+## Architecture
 
-# 4. Verify health
-curl http://localhost:8080/actuator/health        # Backend Spring Boot
-curl http://localhost:8000/api/v1/facturas        # Via Kong Gateway (requires JWT)
+Seven strict layers (ADR-M1, ADR-M3) — no layer may skip its neighbor:
+
+```
+View → Serializer → Logic → Data
+           ↕              ↕
+        Security       Async
+           ↕
+         Utility
 ```
 
-Once running:
-- **Kong Gateway**: http://localhost:8000 (proxy) · http://localhost:8001 (admin)
-- **Backend API**: http://localhost:8080 (direct, bypass Kong for local dev)
-- **Swagger UI**: http://localhost:8080/swagger-ui.html
-- **Frontend**: http://localhost:8000 (via Kong)
-- **MinIO Console**: http://localhost:9001
+| Layer | Package | Role |
+|-------|---------|------|
+| View | `.view` | REST controllers (`*ViewSet`) |
+| Serializer | `.serializer.*` | Java records (Request/Response) + static mappers |
+| Logic | `.logic` | Services — business rules, state transitions, audit |
+| Data | `.data` | Spring Data JPA repositories |
+| Async | `.async` | Event listeners (PDF generation, email) |
+| Security | `.security` | JwtFilter, SecurityConfig, SecureLogger |
+| Utility | `.utility` | GlobalExceptionHandler, custom exceptions |
 
 ---
 
-## Run Unit Tests (without Docker)
+## Environments
+
+| Environment | URL | Trigger |
+|-------------|-----|---------|
+| Production | `http://3.151.82.168:8000` | Push to `main` |
+| Development | `http://3.151.82.168:8100` | Push to `develop` |
+| Local | `http://localhost:8000` | Manual |
+
+---
+
+## Quick Start
+
+### Local (Docker)
+
+```bash
+git clone <repo-url> && cd api-contabilidad
+
+cp .env.local.example .env.local
+# Edit .env.local with your local values
+
+docker compose -f docker-compose.yml -f docker-compose.local.yml \
+  --env-file .env.local up --build
+```
+
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost:8000 |
+| Swagger UI | http://localhost:8000/swagger-ui/index.html |
+| MinIO Console | http://localhost:9001 |
+
+### Backend only
 
 ```bash
 cd backend
+./mvnw test          # Unit tests (fast, no DB)
+./mvnw verify        # Unit + integration tests + JaCoCo 80% gate
+```
 
-# Run all tests
-./mvnw test
+### Frontend only
 
-# Run tests for a specific class
-./mvnw test -Dtest=FacturaServiceTest
-
-# Run integration tests only
-./mvnw test -Dgroups=integration
+```bash
+cd frontend
+npm install
+npm run dev          # Dev server at http://localhost:5173
+npm test             # Vitest unit tests
+npm run test:coverage # Coverage report
 ```
 
 ---
 
-## Generate Coverage Report (JaCoCo)
+## API Endpoints
 
-```bash
-cd backend
+| Method | Path | Auth |
+|--------|------|------|
+| POST | `/api/v1/auth/login` | Public |
+| GET | `/api/v1/cotizaciones` | Any authenticated |
+| POST | `/api/v1/cotizaciones` | Any authenticated |
+| GET | `/api/v1/cotizaciones/{id}` | Any authenticated |
+| PUT | `/api/v1/cotizaciones/{id}/aprobar` | ADMIN / CONTADOR |
+| PUT | `/api/v1/cotizaciones/{id}/rechazar` | ADMIN / CONTADOR |
+| GET | `/api/v1/facturas/{id}` | Any authenticated |
+| POST | `/api/v1/facturas` | Any authenticated |
+| GET | `/api/v1/facturas/{id}/abonos` | Any authenticated |
+| POST | `/api/v1/facturas/{id}/abonos` | ADMIN / CONTADOR |
 
-# Run tests + generate report
-./mvnw verify
-
-# View the report (HTML)
-# Open: backend/target/site/jacoco/index.html
-
-# On macOS/Linux:
-open target/site/jacoco/index.html
-
-# On Windows:
-start target/site/jacoco/index.html
-```
-
-Coverage enforcement:
-- `com.yummy.contabilidad.logic.*` — **100% instruction coverage** required
-- `com.yummy.contabilidad.utility.*` — **100% instruction coverage** required
-- Build **fails** if coverage drops below these thresholds (JaCoCo `check` goal)
+Full interactive docs: `/swagger-ui/index.html`
 
 ---
 
@@ -93,88 +128,25 @@ Coverage enforcement:
 
 ```
 api-contabilidad/
-├── .env.example              ← Environment variable template (copy to .env)
-├── .gitignore
-├── docker-compose.yml        ← ADR-S1: Kong, Backend, Frontend, MariaDB, Redis, MinIO
-├── README.md
-│
-├── backend/                  ← Spring Boot 3.3 (Java 21)
-│   ├── Dockerfile             ← Multi-stage: eclipse-temurin:21-jdk-alpine → jre-alpine
+├── .env.example              ← Production env template
+├── .env.dev.example          ← Dev/staging env template
+├── .env.local.example        ← Local dev env template
+├── docker-compose.yml        ← Base services
+├── docker-compose.dev.yml    ← Dev overrides (port 8100, contabilidad_dev DB)
+├── docker-compose.local.yml  ← Local overrides (exposed ports, contabilidad_local DB)
+├── kong/
+│   ├── kong.yml              ← Production Kong config
+│   └── kong.dev.yml          ← Dev Kong config
+├── backend/                  ← Spring Boot 4 / Java 25
+│   ├── Dockerfile
 │   ├── pom.xml
-│   └── src/main/java/com/yummy/contabilidad/
-│       ├── view/              ← VIEW LAYER: @RestController (FacturaController, etc.)
-│       ├── serializer/        ← SERIALIZER LAYER: DTOs + MapStruct mappers
-│       │   ├── dto/
-│       │   └── mapper/
-│       ├── logic/             ← LOGIC LAYER: @Service (FacturaService, etc.) ← main business logic
-│       ├── domain/            ← DOMAIN: JPA entities + State enums
-│       ├── data/              ← DATA LAYER: Spring Data JPA repositories
-│       ├── async/             ← ASYNC LAYER: Events + @Async tasks (PDF, Email)
-│       ├── security/          ← SECURITY LAYER: SecurityFilterChain, JWT, RBAC
-│       ├── utility/           ← UTILITY LAYER: GlobalExceptionHandler, Validators
-│       └── config/            ← Configuration beans (Redis, MinIO, Swagger, CORS, Async)
-│
-├── frontend/                 ← React 18 + Vite (Node 20)
-│   ├── Dockerfile             ← Multi-stage: node:20.18-alpine → nginx:1.27-alpine
-│   ├── nginx.conf
 │   └── src/
-│       ├── components/RouteGuard.jsx   ← JWT guard (Proxy pattern)
-│       └── pages/                      ← 6 accounting pages
-│
-└── kong/
-    └── kong.yml              ← Kong 3.8 DB-less: JWT + CORS + Rate Limiting + Logging
+│       ├── main/java/com/serviplus/apicontabilidad/
+│       └── test/
+└── frontend/                 ← React 18 / Vite
+    ├── Dockerfile
+    └── src/
+        ├── pages/
+        ├── components/
+        └── __tests__/
 ```
-
----
-
-## Key Architectural Decisions
-
-| ADR | Decision | Rationale |
-|-----|----------|-----------|
-| ADR-M1 | Strict Layered Architecture | Financial domain requires strict separation; no layer can access a non-adjacent layer |
-| ADR-M2 | REST API (`/api/v1/`) | Interoperability with Ventas, Inventario, and Autenticación modules |
-| ADR-M3 | Expanded MVC (7 layers) | Standard MVC insufficient for financial domain; View + Serializer + Logic + Data + Async + Security + Utility |
-| ADR-S1 | Docker Compose | Isolated containers for each service; reproducible environments |
-| ADR-S3 | `audit_log` table | Non-repudiation; all financial operations recorded with user, timestamp, before/after state |
-
----
-
-## Design Patterns Implemented
-
-| Pattern | Where |
-|---------|-------|
-| **State** | `EstadoFactura`, `EstadoCotizacion` — lifecycle transition validation |
-| **Strategy** | `FacturaValidator`, `CotizacionValidator` — swappable validation algorithms |
-| **Chain of Responsibility** | Bean Validation (HTTP) → Business validators → State transitions |
-| **Facade** | `FacturaService`, `CotizacionService` — unified entry points |
-| **Observer** | `ApplicationEventPublisher` + `@EventListener` → async tasks |
-| **Command** | `AuditLog` entity — encapsulates who did what, on which entity, when |
-| **Proxy** | `SecurityFilterChain` + `JwtAuthFilter` + `RouteGuard` |
-| **Bridge** | `PDFGeneratorService` + `MinioClient` — swap MinIO for S3 without changing service |
-| **Repository** | Spring Data JPA repositories in `data/` package |
-| **DTO / Adapter** | MapStruct mappers in `serializer/mapper/` |
-| **Template Method** | Service methods: validate → execute → audit → notify |
-| **Flyweight** | HikariCP connection pool + Spring IoC singletons |
-| **Builder** | `docker-compose.yml` + all `@Builder` domain entities |
-| **Decorator** | `SecureLogger` wraps SLF4J |
-| **Memento** | `captureSnapshot()` in services + `@Transactional` rollback |
-
----
-
-## Known Limitations and Next Steps
-
-1. **PDF generation**: `PDFGeneratorService` generates plain-text PDFs. Replace `generateContent()` with Apache PDFBox 3.x or iText 7 for production-quality PDFs.
-
-2. **Email**: `EmailCotizacionTask` sends plain-text emails. Replace with Thymeleaf HTML templates.
-
-3. **Redis async**: Current implementation uses in-process Spring `@Async` + `@EventListener`. For distributed deployments (multiple backend instances), replace with Redis pub/sub using `RedisMessageListenerContainer` — the task logic in `PDFGeneratorTask` and `EmailCotizacionTask` does not need to change.
-
-4. **Document number generation**: `generarNumero()` uses a count-by-year approach. Under high concurrency, use a database sequence (`CREATE SEQUENCE`) instead.
-
-5. **Client email**: `EmailCotizacionTask` uses a hardcoded placeholder email. Connect to the Clientes microservice to look up the client's actual email address.
-
-6. **Kong JWT consumer**: `kong.yml` contains seed consumers with development keys. In production, the auth service creates consumers dynamically via the Kong Admin API.
-
-7. **Frontend auth**: JWT stored in `localStorage`. For production, use `httpOnly` cookies issued by the auth service to prevent XSS-based theft.
-
-8. **Test coverage**: The integration test (`FacturaTransactionalFlowTest`) requires `MockBean` for MinIO and JavaMailSender. Add a complete test configuration class (`@TestConfiguration`) with mocks for all external services.
