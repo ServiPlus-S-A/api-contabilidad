@@ -123,7 +123,7 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           source: "docker-compose.yml,docker-compose.dev.yml,kong/"
-          target: "/home/ubuntu/api-contabilidad"
+          target: "/home/ubuntu/api-contabilidad-dev"
 
       - name: Pull images and restart dev stack
         uses: appleboy/ssh-action@v1.0.3
@@ -134,7 +134,8 @@ jobs:
           command_timeout: 30m
           script: |
             export DOCKERHUB_USERNAME="${{ secrets.DOCKERHUB_USERNAME }}"
-            cd /home/ubuntu/api-contabilidad
+            mkdir -p /home/ubuntu/api-contabilidad-dev/kong
+            cd /home/ubuntu/api-contabilidad-dev
             docker-compose -p contabilidad-dev \
               -f docker-compose.yml \
               -f docker-compose.dev.yml \
