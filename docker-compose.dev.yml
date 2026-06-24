@@ -32,7 +32,7 @@ services:
 
   backend:
     container_name: contabilidad-dev-backend
-    image: ${DOCKERHUB_USERNAME}/api-contabilidad-backend:develop
+    image: ${DOCKERHUB_USERNAME}/api-contabilidad-backend:${IMAGE_TAG:-develop}
     env_file:
       - .env.dev
     environment:
@@ -42,7 +42,7 @@ services:
 
   frontend:
     container_name: contabilidad-dev-frontend
-    image: ${DOCKERHUB_USERNAME}/api-contabilidad-frontend:develop
+    image: ${DOCKERHUB_USERNAME}/api-contabilidad-frontend:${IMAGE_TAG:-develop}
 
   kong:
     container_name: contabilidad-dev-kong
