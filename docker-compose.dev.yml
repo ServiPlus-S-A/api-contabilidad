@@ -46,5 +46,9 @@ services:
 
   kong:
     container_name: contabilidad-dev-kong
+    environment:
+      KONG_DECLARATIVE_CONFIG: /etc/kong/kong.dev.yml
+    volumes:
+      - ./kong/kong.dev.yml:/etc/kong/kong.dev.yml:ro
     ports:
       - "8100:8000"     # dev proxy → http://<EC2_IP>:8100
