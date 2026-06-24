@@ -14,7 +14,8 @@ public record AppProperties(
         IvaConfig iva,
         MinioConfig minio,
         EmailConfig email,
-        CorsConfig cors
+        CorsConfig cors,
+        String publicUrl
 ) {
     public record JwtConfig(String secret) {}
 
