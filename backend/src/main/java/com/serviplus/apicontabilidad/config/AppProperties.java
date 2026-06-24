@@ -17,7 +17,7 @@ public record AppProperties(
         CorsConfig cors,
         String publicUrl
 ) {
-    public record JwtConfig(String secret) {}
+    public record JwtConfig(String secret, long expiration) {}
 
     public record IvaConfig(BigDecimal rate) {}
 
