@@ -59,8 +59,8 @@ View → Serializer → Logic → Data
 
 | Environment | URL | Trigger |
 |-------------|-----|---------|
-| Production | `http://3.151.82.168:8000` | Push to `main` |
-| Development | `http://3.151.82.168:8100` | Push to `develop` |
+| Production | `http://<EC2_IP>:8000` | Push to `main` |
+| Development | `http://<EC2_IP>:8100` | Push to `develop` |
 | Local | `http://localhost:8000` | Manual |
 
 ---
@@ -83,6 +83,7 @@ docker compose -f docker-compose.yml -f docker-compose.local.yml \
 |---------|-----|
 | Frontend | http://localhost:8000 |
 | Swagger UI | http://localhost:8000/swagger-ui/index.html |
+| API Docs (JSON) | http://localhost:8000/v3/api-docs |
 | MinIO Console | http://localhost:9001 |
 
 ### Backend only
@@ -109,7 +110,6 @@ npm run test:coverage # Coverage report
 
 | Method | Path | Auth |
 |--------|------|------|
-| POST | `/api/v1/auth/login` | Public |
 | GET | `/api/v1/cotizaciones` | Any authenticated |
 | POST | `/api/v1/cotizaciones` | Any authenticated |
 | GET | `/api/v1/cotizaciones/{id}` | Any authenticated |
@@ -120,7 +120,9 @@ npm run test:coverage # Coverage report
 | GET | `/api/v1/facturas/{id}/abonos` | Any authenticated |
 | POST | `/api/v1/facturas/{id}/abonos` | ADMIN / CONTADOR |
 
-Full interactive docs: `/swagger-ui/index.html`
+Full interactive docs available via Kong at `/swagger-ui/index.html`.
+
+> **Note:** Authentication (`POST /api/v1/auth/login`) is not yet implemented in this service — it is planned as a separate auth microservice.
 
 ---
 
