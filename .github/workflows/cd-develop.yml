@@ -141,6 +141,7 @@ jobs:
             export IMAGE_TAG="develop-${{ github.sha }}"
             mkdir -p /home/ubuntu/api-contabilidad-dev/kong
             cd /home/ubuntu/api-contabilidad-dev
+            ln -sf .env.dev .env
             docker-compose -p contabilidad-dev \
               -f docker-compose.yml \
               -f docker-compose.dev.yml \
