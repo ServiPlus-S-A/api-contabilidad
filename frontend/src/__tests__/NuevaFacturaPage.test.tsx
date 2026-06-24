@@ -1,10 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import axios from 'axios';
 import NuevaFacturaPage from '../pages/NuevaFacturaPage.tsx';
 
-vi.mock('axios');
 vi.mock('react-toastify', () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
 const mockNavigate = vi.fn();
@@ -13,13 +11,11 @@ vi.mock('react-router-dom', async () => {
   return { ...actual, useNavigate: () => mockNavigate };
 });
 
-const mockedAxios = vi.mocked(axios, true);
-
 const renderPage = () =>
   render(
     <MemoryRouter>
       <NuevaFacturaPage />
-    </MemoryRouter>,
+    </MemoryRouter>
   );
 
 describe('NuevaFacturaPage', () => {

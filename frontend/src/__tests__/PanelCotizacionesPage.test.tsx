@@ -36,7 +36,7 @@ const renderPage = () =>
   render(
     <MemoryRouter>
       <PanelCotizacionesPage />
-    </MemoryRouter>,
+    </MemoryRouter>
   );
 
 describe('PanelCotizacionesPage', () => {
@@ -45,7 +45,7 @@ describe('PanelCotizacionesPage', () => {
     localStorage.setItem('access_token', 'test-token');
   });
 
-  it('renderiza el titulo del panel', async () => {
+  it('renderiza el titulo del panel', () => {
     mockedAxios.get = vi.fn().mockResolvedValueOnce({ data: [] });
     renderPage();
     expect(screen.getByText('Panel de Cotizaciones')).toBeInTheDocument();
@@ -92,7 +92,7 @@ describe('PanelCotizacionesPage', () => {
       expect(mockedAxios.put).toHaveBeenCalledWith(
         expect.stringContaining('/cotizaciones/1/aprobar'),
         null,
-        expect.any(Object),
+        expect.any(Object)
       );
     });
   });
@@ -112,7 +112,7 @@ describe('PanelCotizacionesPage', () => {
       expect(mockedAxios.put).toHaveBeenCalledWith(
         expect.stringContaining('/cotizaciones/1/rechazar'),
         null,
-        expect.any(Object),
+        expect.any(Object)
       );
     });
   });
