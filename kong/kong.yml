@@ -34,15 +34,6 @@ services:
           - DELETE
           - OPTIONS
         preserve_host: false
-      - name: swagger-route
-        paths:
-          - /swagger-ui
-          - /v3/api-docs
-        strip_path: false
-        methods:
-          - GET
-          - OPTIONS
-        preserve_host: false
     plugins:
       - name: cors
         config:

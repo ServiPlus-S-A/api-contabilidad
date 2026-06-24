@@ -86,6 +86,8 @@ docker compose -f docker-compose.yml -f docker-compose.local.yml \
 | API Docs (JSON) | http://localhost:8000/v3/api-docs |
 | MinIO Console | http://localhost:9001 |
 
+> **Note:** Swagger UI is routed through Kong in local and dev environments only. It is not publicly exposed in production.
+
 ### Backend only
 
 ```bash
