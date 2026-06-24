@@ -23,7 +23,7 @@ describe('LoginPage', () => {
     render(
       <MemoryRouter>
         <LoginPage />
-      </MemoryRouter>,
+      </MemoryRouter>
     );
 
     expect(screen.getByText('Serviplus SA')).toBeInTheDocument();
@@ -39,7 +39,7 @@ describe('LoginPage', () => {
     render(
       <MemoryRouter>
         <LoginPage />
-      </MemoryRouter>,
+      </MemoryRouter>
     );
 
     fireEvent.change(screen.getByPlaceholderText('nombre.usuario'), {
@@ -62,7 +62,7 @@ describe('LoginPage', () => {
     render(
       <MemoryRouter>
         <LoginPage />
-      </MemoryRouter>,
+      </MemoryRouter>
     );
 
     fireEvent.change(screen.getByPlaceholderText('nombre.usuario'), {
@@ -75,7 +75,7 @@ describe('LoginPage', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText('Credenciales incorrectas. Verifica tu usuario y contraseña.'),
+        screen.getByText('Credenciales incorrectas. Verifica tu usuario y contraseña.')
       ).toBeInTheDocument();
     });
     expect(localStorage.getItem('access_token')).toBeNull();

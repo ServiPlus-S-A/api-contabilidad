@@ -21,9 +21,7 @@ const cotizacionMock: CotizacionResponse = {
   subtotal: 1000,
   impuesto: 130,
   total: 1130,
-  lineas: [
-    { id: 1, descripcion: 'Servicio A', cantidad: 2, precioUnitario: 500, subtotal: 1000 },
-  ],
+  lineas: [{ id: 1, descripcion: 'Servicio A', cantidad: 2, precioUnitario: 500, subtotal: 1000 }],
   creadoEn: '2026-06-01T10:00:00',
   creadoPor: 'admin',
 };
@@ -34,7 +32,7 @@ const renderWithRoute = (id: string) =>
       <Routes>
         <Route path="/cotizaciones/:id" element={<DetalleCotizacionPage />} />
       </Routes>
-    </MemoryRouter>,
+    </MemoryRouter>
   );
 
 describe('DetalleCotizacionPage', () => {

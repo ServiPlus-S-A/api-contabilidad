@@ -22,9 +22,7 @@ const facturaMock: FacturaResponse = {
   total: 1130,
   saldo: 1130,
   pdfUrl: 'http://minio/facturas/1.pdf',
-  lineas: [
-    { id: 1, descripcion: 'Servicio B', cantidad: 1, precioUnitario: 1000, subtotal: 1000 },
-  ],
+  lineas: [{ id: 1, descripcion: 'Servicio B', cantidad: 1, precioUnitario: 1000, subtotal: 1000 }],
   creadoEn: '2026-06-01T10:00:00',
   creadoPor: 'admin',
 };
@@ -35,7 +33,7 @@ const renderWithRoute = (id: string) =>
       <Routes>
         <Route path="/facturas/:id" element={<VistaPreviewFacturaPage />} />
       </Routes>
-    </MemoryRouter>,
+    </MemoryRouter>
   );
 
 describe('VistaPreviewFacturaPage', () => {
