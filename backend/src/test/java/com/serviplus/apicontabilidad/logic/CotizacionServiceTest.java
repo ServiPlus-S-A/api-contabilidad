@@ -49,7 +49,7 @@ class CotizacionServiceTest {
     @BeforeEach
     void setUp() {
         appProperties = new AppProperties(
-                new AppProperties.JwtConfig("test-secret-min-32-chars-for-hmac"),
+                new AppProperties.JwtConfig("test-secret-min-32-chars-for-hmac", 86400000L),
                 new AppProperties.IvaConfig(new BigDecimal("0.13")),
                 new AppProperties.MinioConfig("http://localhost:9000", "key", "secret", "bucket"),
                 new AppProperties.EmailConfig("test@test.com"),
