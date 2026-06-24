@@ -33,9 +33,10 @@ Thumbs.db
 *.log
 logs/
 
-# JaCoCo coverage reports
+# Coverage reports
 backend/target/site/
 backend/target/jacoco.exec
+frontend/coverage/
 
 # Docker
 *.pid
