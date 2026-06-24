@@ -42,6 +42,7 @@ services:
             - "http://localhost:8000"
             - "http://3.151.82.168"
             - "http://3.151.82.168:8000"
+            - "http://3.151.82.168:8100"
           methods:
             - GET
             - POST
