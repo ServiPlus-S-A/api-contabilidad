@@ -4,6 +4,9 @@
 
 # Environment secrets — NEVER commit these
 .env
+.env.local
+.env.dev
+.env.prod
 *.env.local
 
 # Maven build artifacts
