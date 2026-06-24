@@ -1,0 +1,46 @@
+# =============================================================================
+# Development / staging environment overrides
+#
+# Runs on the same EC2 as production but completely isolated:
+#   - Separate Docker project name (-p contabilidad-dev)
+#   - Separate volumes (contabilidad-dev_mariadb-data, etc.)
+#   - Separate database: contabilidad_dev
+#   - Kong exposed on port 8100 (prod uses 8000)
+#   - Images tagged :develop (prod uses :latest)
+#
+# First-time setup on EC2:
+#   cp .env.dev.example .env.dev   # then fill in real dev values
+#
+# Start:
+#   docker-compose -p contabilidad-dev \
+#     -f docker-compose.yml -f docker-compose.dev.yml \
+#     --env-file .env.dev up -d
+#
+# Stop:
+#   docker-compose -p contabilidad-dev \
+#     -f docker-compose.yml -f docker-compose.dev.yml \
+#     --env-file .env.dev down
+# =============================================================================
+
+services:
+
+  mariadb:
+    environment:
+      MARIADB_DATABASE: contabilidad_dev
+
+  backend:
+    image: ${DOCKERHUB_USERNAME}/api-contabilidad-backend:develop
+    env_file:
+      - .env.dev
+    environment:
+      DB_NAME: contabilidad_dev
+      LOG_LEVEL: DEBUG
+      JPA_SHOW_SQL: "true"
+
+  frontend:
+    image: ${DOCKERHUB_USERNAME}/api-contabilidad-frontend:develop
+
+  kong:
+    ports:
+      - "8100:8000"     # dev proxy  → http://<EC2_IP>:8100
+      - "8101:8001"     # dev admin  → http://<EC2_IP>:8101
