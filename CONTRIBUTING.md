@@ -2,25 +2,20 @@
 
 ## Branch naming
 
-```
-feature/HU-XX-short-description      ← new feature, from develop
-hotfix/HU-XX-short-description       ← urgent fix, from main → merged into main AND develop
-```
-
-With role differentiation:
+Cada integrante trabaja en su **rama personal** nombrada con las dos iniciales de su nombre completo, guion bajo y apellido:
 
 ```
-feature/HUC-XX-...   ← Cliente role
-feature/HUF-XX-...   ← Funcionario role
-feature/HUA-XX-...   ← Administrador role
+jm_rodriguez   ← Juan M. Rodríguez
+ja_ochoa       ← J. A. Ochoa
+ja_ortiz       ← J. A. Ortiz
 ```
 
-| Branch type | Created from | Merges into |
-|-------------|-------------|-------------|
-| `feature/` | `develop` | `develop` |
-| `hotfix/` | `main` | `main` + `develop` |
+| Tipo de rama | Se crea desde | Merge hacia |
+|---|---|---|
+| Personal (`iniciales_apellido`) | `develop` | `develop` |
+| `hotfix/HU-XX-descripcion` | `main` | `main` + `develop` |
 
-Never branch from another feature branch without lead approval.
+Solo `develop` puede abrir un PR hacia `main`. Las ramas personales nunca van directo a `main`.
 
 ---
 
@@ -47,16 +42,17 @@ One commit per logical unit of work. Never go more than 2 hours without committi
 ## Workflow
 
 ```bash
-# 1. Branch from develop
+# 1. Partir siempre desde develop actualizado
 git checkout develop && git pull origin develop
-git checkout -b feature/HU-XX-my-feature
+git checkout iniciales_apellido   # tu rama personal (ej: jm_rodriguez)
+git merge develop                 # incorporar los últimos cambios
 
-# 2. Work, commit often
-git add <files>
-git commit -m "feat: add X to Y"
+# 2. Trabajar y commitear seguido
+git add <archivos>
+git commit -m "feat: agregar X a Y"
 
-# 3. Push and open PR targeting develop
-git push origin feature/HU-XX-my-feature
+# 3. Push y abrir PR apuntando a develop
+git push origin iniciales_apellido
 gh pr create --base develop
 ```
 
@@ -87,18 +83,27 @@ All must pass. CI runs the same checks and will block merge on failure.
 ## PR template
 
 ```markdown
-## Summary
-Briefly explain what this PR does and why.
+## Historia de Usuario
+Enlace: [HU-XX - Nombre](<link>)
 
-## Changes
-- Main change 1
-- Main change 2
+## ¿Qué hace este PR?
+Descripción concisa.
 
-## Notes
-(optional) Anything reviewers should be aware of.
+## Cambios Realizados
+- [ ] Cambio 1
+
+## Cómo Probar
+1. Paso 1
+2. Resultado esperado
+
+## Checklist
+- [ ] Compila sin errores
+- [ ] Tests pasan localmente
+- [ ] Sin console.log ni código comentado
+- [ ] Rama actualizada con develop
 ```
 
-PRs must be written in English. Qodo reviews every PR automatically — address all "Action required" findings before requesting human review.
+Los PRs deben escribirse en español. Qodo revisa cada PR automáticamente — atender todos los hallazgos marcados como "Action required" antes de solicitar revisión humana.
 
 ---
 

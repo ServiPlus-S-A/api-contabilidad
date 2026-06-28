@@ -5,12 +5,15 @@
 # Jobs:
 #   commit-lint — valida que cada commit del PR cumpla la convención:
 #                 tipo permitido + descripción ≤ 72 chars
+#   sonar       — análisis estático + quality gate en SonarCloud
 #
 # Tipos permitidos: feat | fix | refactor | chore | test | docs | style
 #
-# Nota: SpotBugs fue removido temporalmente — incompatible con Spring Boot 4.x
-# (NoClassesFoundToAnalyzeException en target/classes). Agregar de vuelta
-# cuando el plugin soporte la nueva estructura de build de Spring Boot 4.
+# Secrets requeridos (Settings → Secrets and variables → Actions):
+#   SONAR_TOKEN — token de autenticación de SonarCloud
+# Variables requeridas (Settings → Secrets and variables → Variables):
+#   SONAR_ORGANIZATION — organization key en sonarcloud.io  (ej: serviplus-s-a)
+#   SONAR_PROJECT_KEY  — project key en sonarcloud.io       (ej: ServiPlus-S-A_api-contabilidad)
 # ==============================================================================
 
 name: Code Quality — PR → develop
@@ -67,3 +70,50 @@ jobs:
             exit 1
           fi
           echo "All commit messages are valid."
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # SonarCloud — análisis estático + quality gate
+  # Corre en paralelo con commit-lint; no depende del backend-checks de pr-develop.
+  # fetch-depth: 0 necesario para que Sonar vea el historial completo del PR
+  # y calcule correctamente el código nuevo vs código existente.
+  # ────────────────────────────────────────────────────────────────────────────
+  sonar:
+    name: SonarCloud — quality gate
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 25 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Ensure mvnw is executable
+        run: chmod +x mvnw
+
+      - name: Run tests + SonarCloud analysis
+        run: |
+          ./mvnw verify sonar:sonar -B \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }} \
+            -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY }} \
+            -Dsonar.token=${{ secrets.SONAR_TOKEN }} \
+            -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+        env:
+          JWT_SECRET: test-secret-minimum-32-chars-for-hmac
+          MINIO_ENDPOINT: http://localhost:9000
+          MINIO_ACCESS_KEY: test
+          MINIO_SECRET_KEY: test
+          MINIO_BUCKET: test-bucket
+          EMAIL_FROM: ci@test.com
+          SMTP_HOST: localhost
+          SMTP_PORT: 25
+          CORS_ALLOWED_ORIGINS: http://localhost:5173
