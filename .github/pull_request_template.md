@@ -1,11 +1,18 @@
-## Summary
+## Historia de Usuario
+Enlace: [HU-XX - Nombre](<link>)
 
-Briefly explain what this PR does and why.
+## ¿Qué hace este PR?
+Descripción concisa.
 
-## Changes
+## Cambios Realizados
+- [ ] Cambio 1
 
-- Describe the main changes, keep it concise
+## Cómo Probar
+1. Paso 1
+2. Resultado esperado
 
-## Notes
-
-(optional) Anything reviewers should be aware of
+## Checklist
+- [ ] Compila sin errores
+- [ ] Tests pasan localmente
+- [ ] Sin console.log ni código comentado
+- [ ] Rama actualizada con develop
