@@ -41,4 +41,15 @@ public class NumeroGenerator {
 
         return "%s-%d-%04d".formatted(prefijo, anio, seq);
     }
+
+    public boolean esDelAnioActual(String numero) {
+        if (numero == null || numero.isBlank()) return false;
+        String[] partes = numero.split("-");
+        if (partes.length < 2) return false;
+        try {
+            return Integer.parseInt(partes[1]) == Year.now().getValue();
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
 }
