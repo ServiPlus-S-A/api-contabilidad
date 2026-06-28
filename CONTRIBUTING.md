@@ -1,6 +1,6 @@
-# Contributing to api-contabilidad
+# Contribuir a api-contabilidad
 
-## Branch naming
+## Nomenclatura de ramas
 
 Cada integrante trabaja en su **rama personal** nombrada con las dos iniciales de su nombre completo, guion bajo y apellido:
 
@@ -19,27 +19,27 @@ Solo `develop` puede abrir un PR hacia `main`. Las ramas personales nunca van di
 
 ---
 
-## Commit format
+## Formato de commits
 
 ```
-<type>: <description ≤72 chars in English>
+<tipo>: <descripción ≤72 caracteres en español>
 ```
 
-| Type | When to use |
-|------|-------------|
-| `feat` | New feature |
-| `fix` | Bug fix |
-| `refactor` | Code change without behavior change |
-| `test` | Adding or updating tests |
-| `chore` | Build, CI, config, dependencies |
-| `docs` | Documentation only |
-| `style` | Formatting, lint |
+| Tipo | Cuándo usarlo |
+|------|---------------|
+| `feat` | Nueva funcionalidad |
+| `fix` | Corrección de bug |
+| `refactor` | Cambio de código sin cambio de comportamiento |
+| `test` | Agregar o actualizar pruebas |
+| `chore` | Build, CI, configuración, dependencias |
+| `docs` | Solo documentación |
+| `style` | Formato, lint |
 
-One commit per logical unit of work. Never go more than 2 hours without committing.
+Un commit por unidad lógica de trabajo. Nunca más de 2 horas sin commitear.
 
 ---
 
-## Workflow
+## Flujo de trabajo
 
 ```bash
 # 1. Partir siempre desde develop actualizado
@@ -58,29 +58,29 @@ gh pr create --base develop
 
 ---
 
-## Before opening a PR
+## Antes de abrir un PR
 
-Run all checks locally:
+Ejecutar todas las verificaciones localmente:
 
 ```bash
 # Backend
 cd backend
-./mvnw test          # Unit tests
-./mvnw verify        # Integration tests + 80% JaCoCo gate
+./mvnw test          # Pruebas unitarias
+./mvnw verify        # Pruebas de integración + gate JaCoCo 80%
 
 # Frontend
 cd frontend
 npm run format:check # Prettier
 npm run lint         # ESLint
 npm run type-check   # TypeScript
-npm test             # Vitest (29 tests, 80%+ coverage)
+npm test             # Vitest (29 tests, 80%+ cobertura)
 ```
 
-All must pass. CI runs the same checks and will block merge on failure.
+Todos deben pasar. El CI ejecuta las mismas verificaciones y bloqueará el merge ante cualquier fallo.
 
 ---
 
-## PR template
+## Plantilla de PR
 
 ```markdown
 ## Historia de Usuario
@@ -107,31 +107,31 @@ Los PRs deben escribirse en español. Qodo revisa cada PR automáticamente — a
 
 ---
 
-## Coding standards
+## Estándares de código
 
-- **No comments** unless the WHY is non-obvious
-- **Java records** for all DTOs — immutable by design
-- **Lombok** on entities: `@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder`
-- **No hardcoded values** — all config via `AppProperties` (bound from `.env`)
-- **Strict layering**: View never imports Data; Logic never imports View
-- **BigDecimal** for all money, `RoundingMode.HALF_UP`, scale 2
-- **Never** use `any` in TypeScript — use `unknown` + type guard
-- **Never** commit `.env`, `.env.local`, `.env.dev`
+- **Sin comentarios** a menos que el POR QUÉ no sea obvio
+- **Java records** para todos los DTOs — inmutables por diseño
+- **Lombok** en entidades: `@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder`
+- **Sin valores hardcodeados** — toda configuración vía `AppProperties` (desde `.env`)
+- **Capas estrictas**: View nunca importa Data; Logic nunca importa View
+- **BigDecimal** para todo lo monetario, `RoundingMode.HALF_UP`, escala 2
+- **Nunca** usar `any` en TypeScript — usar `unknown` + type guard
+- **Nunca** commitear `.env`, `.env.local`, `.env.dev`
 
 ---
 
-## Running specific tests
+## Ejecutar pruebas específicas
 
 ```bash
-# Backend — single unit test class
+# Backend — clase de prueba unitaria individual
 ./mvnw test -Dtest=CotizacionServiceTest
 
-# Backend — single integration test
+# Backend — prueba de integración individual
 ./mvnw verify -Dit.test=CotizacionIT
 
-# Frontend — single test file
+# Frontend — archivo de prueba individual
 npx vitest run src/__tests__/LoginPage.test.tsx
 
-# Frontend — E2E (no backend needed, API mocked)
+# Frontend — E2E (sin backend, API mockeada)
 npm run test:e2e
 ```

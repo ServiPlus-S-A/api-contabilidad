@@ -4,7 +4,7 @@
 #
 # Jobs:
 #   commit-lint — valida que cada commit del PR cumpla la convención:
-#                 tipo permitido + descripción ≤ 72 chars
+#                 tipo permitido + descripción ≤ 72 chars en español
 #   sonar       — análisis estático + quality gate en SonarCloud
 #
 # Tipos permitidos: feat | fix | refactor | chore | test | docs | style
@@ -26,7 +26,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-
   # ────────────────────────────────────────────────────────────────────────────
   # Commit lint — valida TODOS los commits del PR contra .commitlintrc.yml
   # fetch-depth: 0 requerido para leer el historial completo del PR
@@ -53,22 +52,22 @@ jobs:
 
             len=${#subject}
             if [ "$len" -gt 72 ]; then
-              echo "::error::Commit exceeds 72 chars ($len): $subject"
+              echo "::error::Commit supera los 72 caracteres ($len): $subject"
               ERRORS=$((ERRORS + 1))
             fi
             if ! echo "$subject" | grep -qE "^($TYPES)(\(.+\))?: .+"; then
-              echo "::error::Invalid format: $subject"
-              echo "::error::Expected  →  type(scope)?: description"
-              echo "::error::Allowed types: $TYPES"
+              echo "::error::Formato inválido: $subject"
+              echo "::error::Esperado  →  tipo(scope)?: descripción en español"
+              echo "::error::Tipos permitidos: $TYPES"
               ERRORS=$((ERRORS + 1))
             fi
           done <<< "$(git log --format='%s' "$BASE_SHA"..HEAD)"
 
           if [ "$ERRORS" -gt 0 ]; then
-            echo "Found $ERRORS commit message violation(s)."
+            echo "Se encontraron $ERRORS error(es) en los mensajes de commit."
             exit 1
           fi
-          echo "All commit messages are valid."
+          echo "Todos los mensajes de commit son válidos."
 
   # ────────────────────────────────────────────────────────────────────────────
   # SonarCloud — análisis estático + quality gate
@@ -105,6 +104,7 @@ jobs:
             -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} \
             -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} \
             -Dsonar.token=${{ secrets.SONAR_TOKEN }} \
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
             -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
         env:
           JWT_SECRET: test-secret-minimum-32-chars-for-hmac

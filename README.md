@@ -2,7 +2,7 @@
 
 ![CI Backend](https://github.com/ServiPlus-S-A/api-contabilidad/actions/workflows/pr-develop.yml/badge.svg)
 ![CD Main](https://github.com/ServiPlus-S-A/api-contabilidad/actions/workflows/cd-main.yml/badge.svg)
-![Coverage](https://img.shields.io/badge/coverage-80%25-brightgreen)
+![Coverage](https://img.shields.io/badge/cobertura-80%25-brightgreen)
 ![Java](https://img.shields.io/badge/Java-25-orange?logo=openjdk)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.6-brightgreen?logo=springboot)
 ![React](https://img.shields.io/badge/React-18.3-61DAFB?logo=react)
@@ -10,30 +10,30 @@
 ![Kong](https://img.shields.io/badge/Kong-3.8-blue?logo=kong)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker)
 
-Accounting microservice for Serviplus SA. Manages **quotes (cotizaciones)**, **invoices (facturas)**, and **partial payments (abonos)** through a REST API + React SPA, deployed behind Kong Gateway.
+Microservicio de contabilidad para Serviplus SA. Gestiona **cotizaciones**, **facturas** y **abonos** a través de una API REST + SPA en React, desplegada detrás de Kong Gateway.
 
 ---
 
-## Tech Stack
+## Stack tecnológico
 
-| Layer | Technology | Version |
-|-------|-----------|---------|
-| API Gateway | Kong (DB-less) | 3.8 |
+| Capa | Tecnología | Versión |
+|------|-----------|---------|
+| API Gateway | Kong (sin DB) | 3.8 |
 | Backend | Spring Boot + Java | 4.0.6 / 25 |
 | Frontend | React + Vite | 18.3 / 5 |
-| Database | MariaDB | 11.4 |
-| Cache / Async | Redis | 7.4 |
-| Object Storage | MinIO | 2024-12-18 |
-| Migrations | Flyway | — |
-| Auth | JWT (jjwt 0.12) | — |
-| API Docs | springdoc OpenAPI | 2.8.3 |
-| Containerization | Docker Compose | — |
+| Base de datos | MariaDB | 11.4 |
+| Caché / Async | Redis | 7.4 |
+| Almacenamiento de objetos | MinIO | 2024-12-18 |
+| Migraciones | Flyway | — |
+| Autenticación | JWT (jjwt 0.12) | — |
+| Docs API | springdoc OpenAPI | 2.8.3 |
+| Contenedores | Docker Compose | — |
 
 ---
 
-## Architecture
+## Arquitectura
 
-Seven strict layers (ADR-M1, ADR-M3) — no layer may skip its neighbor:
+Siete capas estrictas (ADR-M1, ADR-M3) — ninguna capa puede saltarse a su vecina:
 
 ```
 View → Serializer → Logic → Data
@@ -43,29 +43,29 @@ View → Serializer → Logic → Data
          Utility
 ```
 
-| Layer | Package | Role |
-|-------|---------|------|
-| View | `.view` | REST controllers (`*ViewSet`) |
-| Serializer | `.serializer.*` | Java records (Request/Response) + static mappers |
-| Logic | `.logic` | Services — business rules, state transitions, audit |
-| Data | `.data` | Spring Data JPA repositories |
-| Async | `.async` | Event listeners (PDF generation, email) |
+| Capa | Paquete | Rol |
+|------|---------|-----|
+| View | `.view` | Controladores REST (`*ViewSet`) |
+| Serializer | `.serializer.*` | Java records (Request/Response) + mappers estáticos |
+| Logic | `.logic` | Servicios — reglas de negocio, transiciones de estado, auditoría |
+| Data | `.data` | Repositorios Spring Data JPA |
+| Async | `.async` | Listeners de eventos (generación PDF, correo) |
 | Security | `.security` | JwtFilter, SecurityConfig, SecureLogger |
-| Utility | `.utility` | GlobalExceptionHandler, custom exceptions |
+| Utility | `.utility` | GlobalExceptionHandler, excepciones personalizadas |
 
 ---
 
-## Environments
+## Ambientes
 
-| Environment | URL | Trigger |
-|-------------|-----|---------|
-| Production | `http://<EC2_IP>:8000` | Push to `main` |
-| Development | `http://<EC2_IP>:8100` | Push to `develop` |
+| Ambiente | URL | Disparador |
+|----------|-----|------------|
+| Producción | `http://<EC2_IP>:8000` | Push a `main` |
+| Desarrollo | `http://<EC2_IP>:8100` | Push a `develop` |
 | Local | `http://localhost:8000` | Manual |
 
 ---
 
-## Quick Start
+## Inicio rápido
 
 ### Local (Docker)
 
@@ -73,74 +73,74 @@ View → Serializer → Logic → Data
 git clone <repo-url> && cd api-contabilidad
 
 cp .env.local.example .env.local
-# Edit .env.local with your local values
+# Editar .env.local con los valores locales
 
 docker compose -f docker-compose.yml -f docker-compose.local.yml \
   --env-file .env.local up --build
 ```
 
-| Service | URL |
+| Servicio | URL |
 |---------|-----|
 | Frontend | http://localhost:8000 |
 | Swagger UI | http://localhost:8000/swagger-ui/index.html |
-| API Docs (JSON) | http://localhost:8000/v3/api-docs |
+| Docs API (JSON) | http://localhost:8000/v3/api-docs |
 | MinIO Console | http://localhost:9001 |
 
-> **Note:** Swagger UI is routed through Kong in local and dev environments only. It is not publicly exposed in production.
+> **Nota:** Swagger UI se enruta a través de Kong solo en ambientes local y dev. No está expuesto en producción.
 
-### Backend only
+### Solo backend
 
 ```bash
 cd backend
-./mvnw test          # Unit tests (fast, no DB)
-./mvnw verify        # Unit + integration tests + JaCoCo 80% gate
+./mvnw test          # Pruebas unitarias (rápido, sin DB)
+./mvnw verify        # Pruebas unitarias + integración + gate JaCoCo 80%
 ```
 
-### Frontend only
+### Solo frontend
 
 ```bash
 cd frontend
 npm install
-npm run dev          # Dev server at http://localhost:5173
-npm test             # Vitest unit tests
-npm run test:coverage # Coverage report
+npm run dev          # Servidor de desarrollo en http://localhost:5173
+npm test             # Pruebas unitarias Vitest
+npm run test:coverage # Reporte de cobertura
 ```
 
 ---
 
-## API Endpoints
+## Endpoints de la API
 
-| Method | Path | Auth |
-|--------|------|------|
-| GET | `/api/v1/cotizaciones` | Any authenticated |
-| POST | `/api/v1/cotizaciones` | Any authenticated |
-| GET | `/api/v1/cotizaciones/{id}` | Any authenticated |
+| Método | Ruta | Autenticación |
+|--------|------|---------------|
+| GET | `/api/v1/cotizaciones` | Cualquier usuario autenticado |
+| POST | `/api/v1/cotizaciones` | Cualquier usuario autenticado |
+| GET | `/api/v1/cotizaciones/{id}` | Cualquier usuario autenticado |
 | PUT | `/api/v1/cotizaciones/{id}/aprobar` | ADMIN / CONTADOR |
 | PUT | `/api/v1/cotizaciones/{id}/rechazar` | ADMIN / CONTADOR |
-| GET | `/api/v1/facturas/{id}` | Any authenticated |
-| POST | `/api/v1/facturas` | Any authenticated |
-| GET | `/api/v1/facturas/{id}/abonos` | Any authenticated |
+| GET | `/api/v1/facturas/{id}` | Cualquier usuario autenticado |
+| POST | `/api/v1/facturas` | Cualquier usuario autenticado |
+| GET | `/api/v1/facturas/{id}/abonos` | Cualquier usuario autenticado |
 | POST | `/api/v1/facturas/{id}/abonos` | ADMIN / CONTADOR |
 
-Full interactive docs available via Kong at `/swagger-ui/index.html`.
+Documentación interactiva completa disponible vía Kong en `/swagger-ui/index.html`.
 
-> **Note:** Authentication (`POST /api/v1/auth/login`) is not yet implemented in this service — it is planned as a separate auth microservice.
+> **Nota:** La autenticación (`POST /api/v1/auth/login`) aún no está implementada en este servicio — está planificada como microservicio de autenticación independiente.
 
 ---
 
-## Project Structure
+## Estructura del proyecto
 
 ```
 api-contabilidad/
-├── .env.example              ← Production env template
-├── .env.dev.example          ← Dev/staging env template
-├── .env.local.example        ← Local dev env template
-├── docker-compose.yml        ← Base services
-├── docker-compose.dev.yml    ← Dev overrides (port 8100, contabilidad_dev DB)
-├── docker-compose.local.yml  ← Local overrides (exposed ports, contabilidad_local DB)
+├── .env.example              ← Plantilla de variables de producción
+├── .env.dev.example          ← Plantilla de variables dev/staging
+├── .env.local.example        ← Plantilla de variables para desarrollo local
+├── docker-compose.yml        ← Servicios base
+├── docker-compose.dev.yml    ← Overrides dev (puerto 8100, BD contabilidad_dev)
+├── docker-compose.local.yml  ← Overrides local (puertos expuestos, BD contabilidad_local)
 ├── kong/
-│   ├── kong.yml              ← Production Kong config
-│   └── kong.dev.yml          ← Dev Kong config
+│   ├── kong.yml              ← Configuración Kong producción
+│   └── kong.dev.yml          ← Configuración Kong dev
 ├── backend/                  ← Spring Boot 4 / Java 25
 │   ├── Dockerfile
 │   ├── pom.xml
