@@ -44,7 +44,7 @@ export default function NuevaCotizacionPage() {
       {/* eslint-disable-next-line @typescript-eslint/no-misused-promises */}
       <form onSubmit={handleSubmit(onSubmit, handleError)} noValidate>
         <label>
-          ID Cliente
+          ID Cliente{' '}
           <input
             type="number"
             {...register('clienteId', { required: 'Requerido', min: 1, valueAsNumber: true })}
@@ -53,12 +53,12 @@ export default function NuevaCotizacionPage() {
         </label>
 
         <label>
-          Nombre del cliente
+          Nombre del cliente{' '}
           <input type="text" {...register('clienteNombre', { required: 'Requerido' })} />
         </label>
 
         <label>
-          Fecha de vigencia
+          Fecha de vigencia{' '}
           <input
             type="date"
             title="Hasta cuándo es válida esta cotización"
@@ -107,7 +107,7 @@ export default function NuevaCotizacionPage() {
         </button>
 
         <label>
-          Notas
+          Notas{' '}
           <textarea {...register('notas')} rows={3} />
         </label>
 

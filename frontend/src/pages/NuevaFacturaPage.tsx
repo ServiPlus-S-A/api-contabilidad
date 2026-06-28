@@ -46,7 +46,7 @@ export default function NuevaFacturaPage() {
         <section>
           <h2>Datos del cliente</h2>
           <label>
-            ID Cliente
+            ID Cliente{' '}
             <input
               type="number"
               {...register('clienteId', { required: 'Requerido', min: 1, valueAsNumber: true })}
@@ -55,7 +55,7 @@ export default function NuevaFacturaPage() {
             {errors.clienteId && <span role="alert">{errors.clienteId.message}</span>}
           </label>
           <label>
-            Nombre del cliente
+            Nombre del cliente{' '}
             <input
               type="text"
               {...register('clienteNombre', { required: 'Requerido', maxLength: 255 })}
@@ -63,7 +63,7 @@ export default function NuevaFacturaPage() {
             {errors.clienteNombre && <span role="alert">{errors.clienteNombre.message}</span>}
           </label>
           <label>
-            Fecha de vencimiento
+            Fecha de vencimiento{' '}
             <input type="date" {...register('fechaVencimiento', { required: 'Requerido' })} />
             {errors.fechaVencimiento && <span role="alert">{errors.fechaVencimiento.message}</span>}
           </label>
@@ -122,7 +122,7 @@ export default function NuevaFacturaPage() {
         </section>
 
         <label>
-          Notas
+          Notas{' '}
           <textarea {...register('notas', { maxLength: 1000 })} rows={3} />
         </label>
 

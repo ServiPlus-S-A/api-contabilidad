@@ -11,6 +11,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Year;
+import java.time.ZoneId;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,7 +38,7 @@ class NumeroGeneratorTest {
         @Test
         @DisplayName("formatea el número con prefijo, año y secuencia de 4 dígitos")
         void formatoCorrecto() {
-            int anio = Year.now().getValue();
+            int anio = Year.now(ZoneId.systemDefault()).getValue();
             Contador contador = Contador.builder()
                     .tipo("COT")
                     .anio(anio)
@@ -54,7 +55,7 @@ class NumeroGeneratorTest {
         @Test
         @DisplayName("crea un nuevo contador cuando no existe entrada para el año")
         void creaContadorNuevo() {
-            int anio = Year.now().getValue();
+            int anio = Year.now(ZoneId.systemDefault()).getValue();
             when(contadorRepository.findByTipoAndAnio("FAC", anio)).thenReturn(Optional.empty());
             Contador nuevo = Contador.builder().tipo("FAC").anio(anio).siguiente(1L).build();
             when(contadorRepository.save(any())).thenReturn(nuevo);
@@ -72,14 +73,14 @@ class NumeroGeneratorTest {
         @Test
         @DisplayName("retorna true para un número del año en curso")
         void anioActualRetornaTrue() {
-            String numero = "COT-%d-0042".formatted(Year.now().getValue());
+            String numero = "COT-%d-0042".formatted(Year.now(ZoneId.systemDefault()).getValue());
             assertThat(generator.esDelAnioActual(numero)).isTrue();
         }
 
         @Test
         @DisplayName("retorna false para un número de un año pasado")
         void anioAnteriorRetornaFalse() {
-            String numero = "COT-%d-0001".formatted(Year.now().getValue() - 1);
+            String numero = "COT-%d-0001".formatted(Year.now(ZoneId.systemDefault()).getValue() - 1);
             assertThat(generator.esDelAnioActual(numero)).isFalse();
         }
 
