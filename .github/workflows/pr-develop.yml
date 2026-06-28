@@ -1,6 +1,7 @@
 # ==============================================================================
 # PR → develop — único pipeline de CI
 # Corre SOLO en pull requests que apunten a la rama develop.
+# test: verificación de detección SonarCloud en PRs
 #
 # Jobs (paralelos):
 #   backend-checks  — unit + integration tests + JaCoCo 80% coverage gate
