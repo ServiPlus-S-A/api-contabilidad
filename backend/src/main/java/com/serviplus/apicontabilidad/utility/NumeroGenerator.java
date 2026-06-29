@@ -8,13 +8,8 @@ import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Year;
+import java.time.ZoneId;
 
-/**
- * Generates unique sequential document numbers using a pessimistic-locked
- * counter table to prevent duplicates under concurrent requests.
- *
- * Format: PREFIX-YYYY-NNNN (e.g., COT-2026-0001, FAC-2026-0042)
- */
 @Service
 @RequiredArgsConstructor
 public class NumeroGenerator {
@@ -23,7 +18,7 @@ public class NumeroGenerator {
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
     public String siguiente(String prefijo) {
-        int anio = Year.now().getValue();
+        int anio = Year.now(ZoneId.systemDefault()).getValue();
 
         Contador contador = contadorRepository.findByTipoAndAnio(prefijo, anio)
                 .orElseGet(() -> {
@@ -40,5 +35,16 @@ public class NumeroGenerator {
         contadorRepository.save(contador);
 
         return "%s-%d-%04d".formatted(prefijo, anio, seq);
+    }
+
+    public boolean esDelAnioActual(String numero) {
+        if (numero == null || numero.isBlank()) return false;
+        String[] partes = numero.split("-");
+        if (partes.length < 2) return false;
+        try {
+            return Integer.parseInt(partes[1]) == Year.now(ZoneId.systemDefault()).getValue();
+        } catch (NumberFormatException _) {
+            return false;
+        }
     }
 }

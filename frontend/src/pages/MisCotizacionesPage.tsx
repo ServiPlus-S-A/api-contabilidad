@@ -12,19 +12,20 @@ export default function MisCotizacionesPage() {
 
   useEffect(() => {
     const token = localStorage.getItem('access_token');
-    void axios
-      .get<CotizacionResponse[]>(`${API}/cotizaciones`, {
-        headers: { Authorization: `Bearer ${token ?? ''}` },
-      })
-      .then((res) => {
+    async function load() {
+      try {
+        const res = await axios.get<CotizacionResponse[]>(`${API}/cotizaciones`, {
+          headers: { Authorization: `Bearer ${token ?? ''}` },
+        });
         setCotizaciones(res.data);
-      })
-      .catch(() => {
+      } catch {
         toast.error('Error al cargar cotizaciones');
-      })
-      .finally(() => {
+      } finally {
         setLoading(false);
-      });
+      }
+    }
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    load();
   }, []);
 
   if (loading) return <p>Cargando cotizaciones...</p>;
