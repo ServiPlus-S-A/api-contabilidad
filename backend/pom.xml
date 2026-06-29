@@ -24,6 +24,7 @@
         <jacoco.version>0.8.15</jacoco.version>
         <!-- SonarCloud — paths y exclusiones configurados aquí para no repetirlos
              en cada invocación de mvn sonar:sonar en el workflow CI -->
+        <sonar.projectName>api-contabilidad</sonar.projectName>
         <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
         <sonar.exclusions>
             **/config/**,**/domain/**,**/BackendApplication.java
