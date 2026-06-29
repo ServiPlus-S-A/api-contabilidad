@@ -122,8 +122,7 @@ export default function NuevaFacturaPage() {
         </section>
 
         <label>
-          Notas{' '}
-          <textarea {...register('notas', { maxLength: 1000 })} rows={3} />
+          Notas <textarea {...register('notas', { maxLength: 1000 })} rows={3} />
         </label>
 
         <button type="submit" disabled={isSubmitting}>

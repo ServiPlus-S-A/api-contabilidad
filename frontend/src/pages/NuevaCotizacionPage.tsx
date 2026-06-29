@@ -107,8 +107,7 @@ export default function NuevaCotizacionPage() {
         </button>
 
         <label>
-          Notas{' '}
-          <textarea {...register('notas')} rows={3} />
+          Notas <textarea {...register('notas')} rows={3} />
         </label>
 
         <button type="submit" disabled={isSubmitting}>
