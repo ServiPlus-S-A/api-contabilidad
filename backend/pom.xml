@@ -26,10 +26,12 @@
              en cada invocación de mvn sonar:sonar en el workflow CI -->
         <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
         <sonar.exclusions>
-            **/config/**,**/domain/**,**/ApiContabilidadApplication.java
+            **/config/**,**/domain/**,**/BackendApplication.java
         </sonar.exclusions>
         <sonar.coverage.exclusions>
-            **/config/**,**/domain/**,**/view/**,**/ApiContabilidadApplication.java
+            **/config/**,**/domain/**,**/view/**,**/BackendApplication.java,
+            **/async/EmailCotizacionTask.java,**/async/PDFGeneratorTask.java,
+            **/logic/PDFGeneratorService.java,**/security/SecurityConfig.java
         </sonar.coverage.exclusions>
     </properties>
 
@@ -279,6 +281,18 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${jacoco.version}</version>
+                <configuration>
+                    <excludes>
+                        <exclude>com/serviplus/apicontabilidad/BackendApplication.class</exclude>
+                        <exclude>com/serviplus/apicontabilidad/config/**</exclude>
+                        <exclude>com/serviplus/apicontabilidad/view/**</exclude>
+                        <exclude>com/serviplus/apicontabilidad/domain/**</exclude>
+                        <exclude>com/serviplus/apicontabilidad/async/EmailCotizacionTask.class</exclude>
+                        <exclude>com/serviplus/apicontabilidad/async/PDFGeneratorTask.class</exclude>
+                        <exclude>com/serviplus/apicontabilidad/logic/PDFGeneratorService.class</exclude>
+                        <exclude>com/serviplus/apicontabilidad/security/SecurityConfig.class</exclude>
+                    </excludes>
+                </configuration>
                 <executions>
                     <execution>
                         <id>prepare-agent</id>

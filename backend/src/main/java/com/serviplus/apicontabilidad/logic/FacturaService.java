@@ -16,8 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -58,7 +58,7 @@ public class FacturaService {
                 .impuesto(impuesto)
                 .total(total)
                 .saldo(total)
-                .creadoEn(LocalDateTime.now())
+                .creadoEn(LocalDateTime.now(ZoneId.systemDefault()))
                 .creadoPor(usuario)
                 .build();
 
@@ -78,7 +78,7 @@ public class FacturaService {
         Factura factura = facturaRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Factura no encontrada: " + id));
         factura.setPdfUrl(pdfUrl);
-        factura.setActualizadoEn(LocalDateTime.now());
+        factura.setActualizadoEn(LocalDateTime.now(ZoneId.systemDefault()));
         facturaRepository.save(factura);
     }
 
@@ -93,7 +93,7 @@ public class FacturaService {
                     .precioUnitario(r.precioUnitario())
                     .subtotal(subtotalLinea)
                     .build();
-        }).collect(Collectors.toList());
+        }).toList();
     }
 
     private BigDecimal sumarSubtotales(List<LineaFactura> lineas) {
@@ -109,7 +109,7 @@ public class FacturaService {
                 .accion(accion)
                 .usuario(usuario)
                 .detalle(detalle)
-                .timestamp(LocalDateTime.now())
+                .timestamp(LocalDateTime.now(ZoneId.systemDefault()))
                 .build());
     }
 }

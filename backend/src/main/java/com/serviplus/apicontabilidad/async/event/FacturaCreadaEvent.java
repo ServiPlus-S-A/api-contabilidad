@@ -5,7 +5,7 @@ import org.springframework.context.ApplicationEvent;
 
 public class FacturaCreadaEvent extends ApplicationEvent {
 
-    private final Factura factura;
+    private final transient Factura factura;
 
     public FacturaCreadaEvent(Object source, Factura factura) {
         super(source);

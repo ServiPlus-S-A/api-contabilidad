@@ -6,7 +6,6 @@ import com.serviplus.apicontabilidad.data.FacturaRepository;
 import com.serviplus.apicontabilidad.domain.EstadoFactura;
 import com.serviplus.apicontabilidad.domain.Factura;
 import com.serviplus.apicontabilidad.serializer.factura.FacturaRequest;
-import com.serviplus.apicontabilidad.serializer.factura.FacturaResponse;
 import com.serviplus.apicontabilidad.serializer.factura.LineaFacturaRequest;
 import com.serviplus.apicontabilidad.utility.NumeroGenerator;
 import com.serviplus.apicontabilidad.utility.RecursoNoEncontradoException;
@@ -77,7 +76,7 @@ class FacturaServiceTest {
             when(facturaRepository.save(captor.capture())).thenReturn(fake);
 
             // Act
-            FacturaResponse response = facturaService.crear(request, "user");
+            facturaService.crear(request, "user");
 
             // Assert
             Factura persisted = captor.getValue();

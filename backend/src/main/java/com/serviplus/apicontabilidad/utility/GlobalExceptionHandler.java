@@ -29,8 +29,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(TransicionInvalidaException.class)
     public ResponseEntity<ApiError> handleTransicion(TransicionInvalidaException ex) {
         return ResponseEntity
-                .status(HttpStatus.UNPROCESSABLE_ENTITY)
-                .body(new ApiError(HttpStatus.UNPROCESSABLE_ENTITY.value(), ex.getMessage()));
+                .status(422)
+                .body(new ApiError(422, ex.getMessage()));
     }
 
     @ExceptionHandler(ReglaNegocioException.class)

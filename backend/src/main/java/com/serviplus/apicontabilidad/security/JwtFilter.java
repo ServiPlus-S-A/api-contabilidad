@@ -19,7 +19,6 @@ import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * <<Proxy Pattern>> — Intercepts every HTTP request once, validates the JWT,
@@ -68,7 +67,7 @@ public class JwtFilter extends OncePerRequestFilter {
                     : rawRoles.stream()
                             .map(Object::toString)
                             .map(SimpleGrantedAuthority::new)
-                            .collect(Collectors.toList());
+                            .toList();
 
             UsernamePasswordAuthenticationToken auth =
                     new UsernamePasswordAuthenticationToken(username, null, authorities);
