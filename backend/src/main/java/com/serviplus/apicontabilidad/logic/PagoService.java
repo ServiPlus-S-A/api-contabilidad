@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 /**
@@ -44,14 +45,14 @@ public class PagoService {
         Abono abono = Abono.builder()
                 .factura(factura)
                 .monto(request.monto())
-                .fecha(LocalDateTime.now())
+                .fecha(LocalDateTime.now(ZoneId.systemDefault()))
                 .referencia(request.referencia())
                 .creadoPor(usuario)
                 .build();
 
         BigDecimal nuevoSaldo = factura.getSaldo().subtract(request.monto());
         factura.setSaldo(nuevoSaldo);
-        factura.setActualizadoEn(LocalDateTime.now());
+        factura.setActualizadoEn(LocalDateTime.now(ZoneId.systemDefault()));
 
         if (nuevoSaldo.compareTo(BigDecimal.ZERO) == 0) {
             factura.setEstado(EstadoFactura.PAGADA);
@@ -103,7 +104,7 @@ public class PagoService {
                 .accion(accion)
                 .usuario(usuario)
                 .detalle(detalle)
-                .timestamp(LocalDateTime.now())
+                .timestamp(LocalDateTime.now(ZoneId.systemDefault()))
                 .build());
     }
 }

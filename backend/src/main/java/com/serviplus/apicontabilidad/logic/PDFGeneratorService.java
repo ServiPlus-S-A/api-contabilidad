@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 
 /**
  * <<Template Method Pattern>> — Defines the skeleton for generating a PDF
@@ -40,7 +41,7 @@ public class PDFGeneratorService {
         }
     }
 
-    protected byte[] generarPDF(Factura factura) throws Exception {
+    protected byte[] generarPDF(Factura factura) throws IOException {
         try (PDDocument document = new PDDocument()) {
             PDPage page = new PDPage(PDRectangle.A4);
             document.addPage(page);
@@ -61,7 +62,7 @@ public class PDFGeneratorService {
     }
 
     protected void escribirEncabezado(PDPageContentStream content, PDType1Font font, Factura factura)
-            throws Exception {
+            throws IOException {
         content.beginText();
         content.setFont(font, 18);
         content.newLineAtOffset(50, 780);
@@ -76,7 +77,7 @@ public class PDFGeneratorService {
     }
 
     protected void escribirDatosCliente(PDPageContentStream content, PDType1Font font, Factura factura)
-            throws Exception {
+            throws IOException {
         content.beginText();
         content.setFont(font, 11);
         content.newLineAtOffset(50, 730);
@@ -87,7 +88,7 @@ public class PDFGeneratorService {
     }
 
     protected void escribirTotales(PDPageContentStream content, PDType1Font fontBold, PDType1Font fontRegular,
-                                   Factura factura) throws Exception {
+                                   Factura factura) throws IOException {
         content.beginText();
         content.setFont(fontRegular, 11);
         content.newLineAtOffset(50, 690);
@@ -103,18 +104,22 @@ public class PDFGeneratorService {
         content.endText();
     }
 
-    private String subirAMinio(String numero, byte[] pdfBytes) throws Exception {
+    private String subirAMinio(String numero, byte[] pdfBytes) throws IOException {
         String bucket = appProperties.minio().bucket();
         String objectName = "facturas/%s.pdf".formatted(numero);
 
-        minioClient.putObject(
-                PutObjectArgs.builder()
-                        .bucket(bucket)
-                        .object(objectName)
-                        .stream(new ByteArrayInputStream(pdfBytes), pdfBytes.length, -1)
-                        .contentType("application/pdf")
-                        .build()
-        );
+        try {
+            minioClient.putObject(
+                    PutObjectArgs.builder()
+                            .bucket(bucket)
+                            .object(objectName)
+                            .stream(new ByteArrayInputStream(pdfBytes), pdfBytes.length, -1)
+                            .contentType("application/pdf")
+                            .build()
+            );
+        } catch (Exception e) {
+            throw new IOException("Error al subir PDF a MinIO: " + objectName, e);
+        }
 
         String pdfUrl = "%s/%s/%s".formatted(
                 appProperties.minio().endpoint(),

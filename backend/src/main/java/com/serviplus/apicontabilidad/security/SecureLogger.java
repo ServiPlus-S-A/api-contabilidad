@@ -16,11 +16,15 @@ public final class SecureLogger {
     }
 
     public static void logAuthFailure(String path, String reason) {
-        log.warn("Auth failure [{}]: {}", sanitize(path), sanitize(reason));
+        if (log.isWarnEnabled()) {
+            log.warn("Auth failure [{}]: {}", sanitize(path), sanitize(reason));
+        }
     }
 
     public static void logAccessDenied(String username, String path) {
-        log.warn("Access denied — user=[{}] path=[{}]", sanitize(username), sanitize(path));
+        if (log.isWarnEnabled()) {
+            log.warn("Access denied — user=[{}] path=[{}]", sanitize(username), sanitize(path));
+        }
     }
 
     private static String sanitize(String value) {

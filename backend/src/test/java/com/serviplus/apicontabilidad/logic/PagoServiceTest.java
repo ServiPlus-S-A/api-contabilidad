@@ -7,7 +7,6 @@ import com.serviplus.apicontabilidad.domain.Abono;
 import com.serviplus.apicontabilidad.domain.EstadoFactura;
 import com.serviplus.apicontabilidad.domain.Factura;
 import com.serviplus.apicontabilidad.serializer.abono.AbonoRequest;
-import com.serviplus.apicontabilidad.serializer.abono.AbonoResponse;
 import com.serviplus.apicontabilidad.utility.ReglaNegocioException;
 import com.serviplus.apicontabilidad.utility.RecursoNoEncontradoException;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,7 +14,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 

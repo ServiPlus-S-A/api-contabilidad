@@ -33,7 +33,7 @@ public class EmailCotizacionTask {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(appProperties.email().from());
-            // TODO: resolve actual client email via Clientes microservice
+            // Placeholder: usa el remitente hasta integrar el microservicio de Clientes
             message.setTo(appProperties.email().from());
             message.setSubject("Cotización " + cotizacion.getNumero() + " ha sido aprobada");
             message.setText(buildBody(cotizacion));

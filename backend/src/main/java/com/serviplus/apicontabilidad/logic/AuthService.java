@@ -14,6 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 
@@ -47,8 +48,8 @@ public class AuthService {
         return Jwts.builder()
                 .subject(usuario.getUsername())
                 .claim("roles", List.of(usuario.getRole()))
-                .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + appProperties.jwt().expiration()))
+                .issuedAt(Date.from(Instant.now()))
+                .expiration(Date.from(Instant.now().plusMillis(appProperties.jwt().expiration())))
                 .signWith(key)
                 .compact();
     }
