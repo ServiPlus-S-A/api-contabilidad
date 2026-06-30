@@ -3,11 +3,11 @@ package com.serviplus.apicontabilidad.domain;
 /**
  * <<State Pattern>> — Defines allowed lifecycle transitions for a Cotizacion.
  *
- * BORRADOR  → ENVIADA  : customer submits the quote for review
- * ENVIADA   → ACEPTADA : admin/contador approves; triggers email + PDF
- * ENVIADA   → RECHAZADA: admin/contador rejects
- * BORRADOR  → ANULADA  : customer cancels before submission
- * ENVIADA   → ANULADA  : admin cancels a pending quote
+ * BORRADOR  → ENVIADA  : coordinator (ADMIN/CONTADOR) submits the quote for internal review
+ * ENVIADA   → ACEPTADA : coordinator approves; triggers client email + PDF via async event
+ * ENVIADA   → RECHAZADA: coordinator rejects
+ * BORRADOR  → ANULADA  : coordinator cancels the quote before sending it for review
+ * ENVIADA   → ANULADA  : coordinator cancels a quote already under review
  * ACEPTADA, RECHAZADA, ANULADA → terminal; no further transitions allowed
  */
 public enum EstadoCotizacion {

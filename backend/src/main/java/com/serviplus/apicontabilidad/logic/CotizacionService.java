@@ -118,7 +118,7 @@ public class CotizacionService {
         cotizacion.setActualizadoEn(LocalDateTime.now(ZoneId.systemDefault()));
         cotizacionRepository.save(cotizacion);
         registrarAudit(id, ENTIDAD_COT, "ENVIAR", usuario, cotizacion.getNumero());
-        log.info("Cotización {} enviada al cliente por {}", cotizacion.getNumero(), usuario);
+        log.info("Cotización {} marcada como ENVIADA por {}", cotizacion.getNumero(), usuario);
 
         return CotizacionSerializer.toResponse(cotizacion);
     }

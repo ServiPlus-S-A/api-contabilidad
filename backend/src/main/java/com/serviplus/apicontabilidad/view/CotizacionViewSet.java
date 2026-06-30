@@ -67,7 +67,7 @@ public class CotizacionViewSet {
 
     @PutMapping("/{id}/enviar")
     @PreAuthorize("hasAnyRole('ADMIN','CONTADOR')")
-    @Operation(summary = "Envía la cotización al cliente — transición BORRADOR → ENVIADA")
+    @Operation(summary = "Marca la cotización como ENVIADA para revisión — transición BORRADOR → ENVIADA")
     public ResponseEntity<CotizacionResponse> enviar(@PathVariable Long id, Authentication auth) {
         return ResponseEntity.ok(cotizacionService.enviar(id, auth.getName()));
     }
