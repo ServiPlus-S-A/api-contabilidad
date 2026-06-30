@@ -64,4 +64,18 @@ public class CotizacionViewSet {
     public ResponseEntity<CotizacionResponse> rechazar(@PathVariable Long id, Authentication auth) {
         return ResponseEntity.ok(cotizacionService.rechazar(id, auth.getName()));
     }
+
+    @PutMapping("/{id}/enviar")
+    @PreAuthorize("hasAnyRole('ADMIN','CONTADOR')")
+    @Operation(summary = "Envía la cotización al cliente — transición BORRADOR → ENVIADA")
+    public ResponseEntity<CotizacionResponse> enviar(@PathVariable Long id, Authentication auth) {
+        return ResponseEntity.ok(cotizacionService.enviar(id, auth.getName()));
+    }
+
+    @PutMapping("/{id}/anular")
+    @PreAuthorize("hasAnyRole('ADMIN','CONTADOR')")
+    @Operation(summary = "Anula la cotización — válido desde BORRADOR o ENVIADA")
+    public ResponseEntity<CotizacionResponse> anular(@PathVariable Long id, Authentication auth) {
+        return ResponseEntity.ok(cotizacionService.anular(id, auth.getName()));
+    }
 }

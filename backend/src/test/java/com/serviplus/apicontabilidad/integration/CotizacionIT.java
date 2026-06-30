@@ -201,4 +201,184 @@ class CotizacionIT extends AbstractContainerIT {
             assertThat(res.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         }
     }
+
+    // ── PUT /api/v1/cotizaciones/{id}/enviar ──────────────────────────────────
+
+    @Nested
+    @DisplayName("PUT /api/v1/cotizaciones/{id}/enviar")
+    class Enviar {
+
+        @Test
+        @DisplayName("200 y estado ENVIADA al enviar desde BORRADOR")
+        void debeEnviarCotizacionBorrador() {
+            ResponseEntity<CotizacionResponse> created = restTemplate.postForEntity(
+                    url("/api/v1/cotizaciones"),
+                    new HttpEntity<>(buildRequest(), authHeaders(JwtTestHelper.contadorToken())),
+                    CotizacionResponse.class);
+            long id = created.getBody().id();
+
+            ResponseEntity<CotizacionResponse> res = restTemplate.exchange(
+                    url("/api/v1/cotizaciones/" + id + "/enviar"),
+                    HttpMethod.PUT,
+                    new HttpEntity<>(authHeaders(JwtTestHelper.contadorToken())),
+                    CotizacionResponse.class);
+
+            assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(res.getBody().estado()).isEqualTo(EstadoCotizacion.ENVIADA);
+        }
+
+        @Test
+        @DisplayName("422 al intentar enviar una cotización ya ENVIADA")
+        void debeRetornar422SiYaEnviada() {
+            ResponseEntity<CotizacionResponse> created = restTemplate.postForEntity(
+                    url("/api/v1/cotizaciones"),
+                    new HttpEntity<>(buildRequest(), authHeaders(JwtTestHelper.contadorToken())),
+                    CotizacionResponse.class);
+            long id = created.getBody().id();
+
+            restTemplate.exchange(url("/api/v1/cotizaciones/" + id + "/enviar"),
+                    HttpMethod.PUT, new HttpEntity<>(authHeaders(JwtTestHelper.contadorToken())), String.class);
+
+            ResponseEntity<String> res = restTemplate.exchange(
+                    url("/api/v1/cotizaciones/" + id + "/enviar"),
+                    HttpMethod.PUT,
+                    new HttpEntity<>(authHeaders(JwtTestHelper.contadorToken())),
+                    String.class);
+
+            assertThat(res.getStatusCode().value()).isEqualTo(422);
+        }
+
+        @Test
+        @DisplayName("403 cuando ROLE_CLIENTE intenta enviar")
+        void debeRetornar403ParaRolCliente() {
+            ResponseEntity<CotizacionResponse> created = restTemplate.postForEntity(
+                    url("/api/v1/cotizaciones"),
+                    new HttpEntity<>(buildRequest(), authHeaders(JwtTestHelper.clienteToken())),
+                    CotizacionResponse.class);
+            long id = created.getBody().id();
+
+            ResponseEntity<String> res = restTemplate.exchange(
+                    url("/api/v1/cotizaciones/" + id + "/enviar"),
+                    HttpMethod.PUT,
+                    new HttpEntity<>(authHeaders(JwtTestHelper.clienteToken())),
+                    String.class);
+
+            assertThat(res.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+
+        @Test
+        @DisplayName("flujo completo: crear → enviar → aprobar retorna ACEPTADA")
+        void debePermitirAprobarDesdeEnviada() {
+            ResponseEntity<CotizacionResponse> created = restTemplate.postForEntity(
+                    url("/api/v1/cotizaciones"),
+                    new HttpEntity<>(buildRequest(), authHeaders(JwtTestHelper.contadorToken())),
+                    CotizacionResponse.class);
+            long id = created.getBody().id();
+
+            restTemplate.exchange(url("/api/v1/cotizaciones/" + id + "/enviar"),
+                    HttpMethod.PUT, new HttpEntity<>(authHeaders(JwtTestHelper.contadorToken())),
+                    CotizacionResponse.class);
+
+            ResponseEntity<CotizacionResponse> res = restTemplate.exchange(
+                    url("/api/v1/cotizaciones/" + id + "/aprobar"),
+                    HttpMethod.PUT,
+                    new HttpEntity<>(authHeaders(JwtTestHelper.adminToken())),
+                    CotizacionResponse.class);
+
+            assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(res.getBody().estado()).isEqualTo(EstadoCotizacion.ACEPTADA);
+        }
+    }
+
+    // ── PUT /api/v1/cotizaciones/{id}/anular ──────────────────────────────────
+
+    @Nested
+    @DisplayName("PUT /api/v1/cotizaciones/{id}/anular")
+    class Anular {
+
+        @Test
+        @DisplayName("200 y estado ANULADA al anular desde BORRADOR")
+        void debeAnularDesdeBorrador() {
+            ResponseEntity<CotizacionResponse> created = restTemplate.postForEntity(
+                    url("/api/v1/cotizaciones"),
+                    new HttpEntity<>(buildRequest(), authHeaders(JwtTestHelper.contadorToken())),
+                    CotizacionResponse.class);
+            long id = created.getBody().id();
+
+            ResponseEntity<CotizacionResponse> res = restTemplate.exchange(
+                    url("/api/v1/cotizaciones/" + id + "/anular"),
+                    HttpMethod.PUT,
+                    new HttpEntity<>(authHeaders(JwtTestHelper.adminToken())),
+                    CotizacionResponse.class);
+
+            assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(res.getBody().estado()).isEqualTo(EstadoCotizacion.ANULADA);
+        }
+
+        @Test
+        @DisplayName("200 y estado ANULADA al anular desde ENVIADA")
+        void debeAnularDesdeEnviada() {
+            ResponseEntity<CotizacionResponse> created = restTemplate.postForEntity(
+                    url("/api/v1/cotizaciones"),
+                    new HttpEntity<>(buildRequest(), authHeaders(JwtTestHelper.contadorToken())),
+                    CotizacionResponse.class);
+            long id = created.getBody().id();
+
+            restTemplate.exchange(url("/api/v1/cotizaciones/" + id + "/enviar"),
+                    HttpMethod.PUT, new HttpEntity<>(authHeaders(JwtTestHelper.contadorToken())),
+                    CotizacionResponse.class);
+
+            ResponseEntity<CotizacionResponse> res = restTemplate.exchange(
+                    url("/api/v1/cotizaciones/" + id + "/anular"),
+                    HttpMethod.PUT,
+                    new HttpEntity<>(authHeaders(JwtTestHelper.adminToken())),
+                    CotizacionResponse.class);
+
+            assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(res.getBody().estado()).isEqualTo(EstadoCotizacion.ANULADA);
+        }
+
+        @Test
+        @DisplayName("422 al anular desde ACEPTADA — estado terminal")
+        void debeRetornar422DesdeAceptada() {
+            ResponseEntity<CotizacionResponse> created = restTemplate.postForEntity(
+                    url("/api/v1/cotizaciones"),
+                    new HttpEntity<>(buildRequest(), authHeaders(JwtTestHelper.contadorToken())),
+                    CotizacionResponse.class);
+            long id = created.getBody().id();
+
+            restTemplate.exchange(url("/api/v1/cotizaciones/" + id + "/enviar"),
+                    HttpMethod.PUT, new HttpEntity<>(authHeaders(JwtTestHelper.contadorToken())),
+                    CotizacionResponse.class);
+            restTemplate.exchange(url("/api/v1/cotizaciones/" + id + "/aprobar"),
+                    HttpMethod.PUT, new HttpEntity<>(authHeaders(JwtTestHelper.adminToken())),
+                    CotizacionResponse.class);
+
+            ResponseEntity<String> res = restTemplate.exchange(
+                    url("/api/v1/cotizaciones/" + id + "/anular"),
+                    HttpMethod.PUT,
+                    new HttpEntity<>(authHeaders(JwtTestHelper.adminToken())),
+                    String.class);
+
+            assertThat(res.getStatusCode().value()).isEqualTo(422);
+        }
+
+        @Test
+        @DisplayName("403 cuando ROLE_CLIENTE intenta anular")
+        void debeRetornar403ParaRolCliente() {
+            ResponseEntity<CotizacionResponse> created = restTemplate.postForEntity(
+                    url("/api/v1/cotizaciones"),
+                    new HttpEntity<>(buildRequest(), authHeaders(JwtTestHelper.clienteToken())),
+                    CotizacionResponse.class);
+            long id = created.getBody().id();
+
+            ResponseEntity<String> res = restTemplate.exchange(
+                    url("/api/v1/cotizaciones/" + id + "/anular"),
+                    HttpMethod.PUT,
+                    new HttpEntity<>(authHeaders(JwtTestHelper.clienteToken())),
+                    String.class);
+
+            assertThat(res.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+    }
 }

@@ -112,6 +112,28 @@ public class CotizacionService {
         return CotizacionSerializer.toResponse(cotizacion);
     }
 
+    public CotizacionResponse enviar(Long id, String usuario) {
+        Cotizacion cotizacion = buscarOFallar(id);
+        transicionar(cotizacion, EstadoCotizacion.ENVIADA);
+        cotizacion.setActualizadoEn(LocalDateTime.now(ZoneId.systemDefault()));
+        cotizacionRepository.save(cotizacion);
+        registrarAudit(id, ENTIDAD_COT, "ENVIAR", usuario, cotizacion.getNumero());
+        log.info("Cotización {} enviada al cliente por {}", cotizacion.getNumero(), usuario);
+
+        return CotizacionSerializer.toResponse(cotizacion);
+    }
+
+    public CotizacionResponse anular(Long id, String usuario) {
+        Cotizacion cotizacion = buscarOFallar(id);
+        transicionar(cotizacion, EstadoCotizacion.ANULADA);
+        cotizacion.setActualizadoEn(LocalDateTime.now(ZoneId.systemDefault()));
+        cotizacionRepository.save(cotizacion);
+        registrarAudit(id, ENTIDAD_COT, "ANULAR", usuario, cotizacion.getNumero());
+        log.info("Cotización {} anulada por {}", cotizacion.getNumero(), usuario);
+
+        return CotizacionSerializer.toResponse(cotizacion);
+    }
+
     private Cotizacion buscarOFallar(Long id) {
         return cotizacionRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Cotización no encontrada: " + id));
