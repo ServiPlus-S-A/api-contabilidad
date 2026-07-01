@@ -425,6 +425,38 @@ class CotizacionIT extends AbstractContainerIT {
         }
 
         @Test
+        @DisplayName("409 al crear segunda factura vinculada a la misma cotizacion")
+        void debeRetornar409AlDuplicarVinculoCotizacion() {
+            ResponseEntity<CotizacionResponse> created = restTemplate.postForEntity(
+                    url("/api/v1/cotizaciones"),
+                    new HttpEntity<>(buildRequest(), authHeaders(JwtTestHelper.contadorToken())),
+                    CotizacionResponse.class);
+            long cotId = created.getBody().id();
+
+            restTemplate.exchange(url("/api/v1/cotizaciones/" + cotId + "/enviar"),
+                    HttpMethod.PUT, new HttpEntity<>(authHeaders(JwtTestHelper.contadorToken())),
+                    CotizacionResponse.class);
+            restTemplate.exchange(url("/api/v1/cotizaciones/" + cotId + "/aprobar"),
+                    HttpMethod.PUT, new HttpEntity<>(authHeaders(JwtTestHelper.adminToken())),
+                    CotizacionResponse.class);
+
+            FacturaRequest facturaReq = new FacturaRequest(
+                    1L, "Cliente", LocalDate.now().plusDays(30), null,
+                    List.of(new LineaFacturaRequest("Servicio", new BigDecimal("1"), new BigDecimal("500.00"))),
+                    cotId);
+
+            restTemplate.postForEntity(url("/api/v1/facturas"),
+                    new HttpEntity<>(facturaReq, authHeaders(JwtTestHelper.contadorToken())),
+                    FacturaResponse.class);
+
+            ResponseEntity<String> res = restTemplate.postForEntity(url("/api/v1/facturas"),
+                    new HttpEntity<>(facturaReq, authHeaders(JwtTestHelper.contadorToken())),
+                    String.class);
+
+            assertThat(res.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        }
+
+        @Test
         @DisplayName("flujo completo: cotización ACEPTADA aparece en facturables; desaparece al crear factura")
         void debeExcluirCotizacionCuandoYaTieneFactura() {
             // 1. Crear cotización y llevarla a ACEPTADA

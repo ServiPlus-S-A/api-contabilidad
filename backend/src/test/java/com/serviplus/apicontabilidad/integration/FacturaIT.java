@@ -88,6 +88,22 @@ class FacturaIT extends AbstractContainerIT {
         }
 
         @Test
+        @DisplayName("404 cuando cotizacionId no existe en la base de datos")
+        void debeRetornar404SiCotizacionIdNoExiste() {
+            FacturaRequest req = new FacturaRequest(
+                    1L, "Cliente", LocalDate.now().plusDays(30), null,
+                    List.of(new LineaFacturaRequest("Servicio", new BigDecimal("1"), new BigDecimal("100.00"))),
+                    999999L);
+
+            ResponseEntity<String> res = restTemplate.postForEntity(
+                    url("/api/v1/facturas"),
+                    new HttpEntity<>(req, authHeaders(JwtTestHelper.contadorToken())),
+                    String.class);
+
+            assertThat(res.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        }
+
+        @Test
         @DisplayName("calcula correctamente: 1×1000=1000 subtotal, 130 IVA, 1130 total")
         void debeCalcularTotales() {
             HttpEntity<FacturaRequest> req = new HttpEntity<>(buildRequest(), authHeaders(JwtTestHelper.contadorToken()));

@@ -2,6 +2,7 @@ package com.serviplus.apicontabilidad.logic;
 
 import com.serviplus.apicontabilidad.config.AppProperties;
 import com.serviplus.apicontabilidad.data.AuditLogRepository;
+import com.serviplus.apicontabilidad.data.CotizacionRepository;
 import com.serviplus.apicontabilidad.data.FacturaRepository;
 import com.serviplus.apicontabilidad.domain.EstadoFactura;
 import com.serviplus.apicontabilidad.domain.Factura;
@@ -38,6 +39,7 @@ import static org.mockito.Mockito.*;
 class FacturaServiceTest {
 
     @Mock private FacturaRepository facturaRepository;
+    @Mock private CotizacionRepository cotizacionRepository;
     @Mock private AuditLogRepository auditLogRepository;
     @Mock private ApplicationEventPublisher eventPublisher;
     @Mock private NumeroGenerator numeroGenerator;
@@ -55,7 +57,7 @@ class FacturaServiceTest {
                 "http://localhost:8000"
         );
         facturaService = new FacturaService(
-                facturaRepository, auditLogRepository, eventPublisher,
+                facturaRepository, cotizacionRepository, auditLogRepository, eventPublisher,
                 numeroGenerator, appProperties);
     }
 
@@ -138,8 +140,8 @@ class FacturaServiceTest {
         @Test
         @DisplayName("debe persistir cotizacionId en la factura cuando se provee")
         void debeVincularCotizacionIdSiSeProvee() {
-            // Arrange
             when(numeroGenerator.siguiente("FAC")).thenReturn("FAC-2026-0004");
+            when(cotizacionRepository.existsById(7L)).thenReturn(true);
             LineaFacturaRequest linea = new LineaFacturaRequest(
                     "Consultoría", new BigDecimal("1"), new BigDecimal("200.00"));
             FacturaRequest request = new FacturaRequest(
@@ -150,11 +152,23 @@ class FacturaServiceTest {
                     facturaStub("FAC-2026-0004", new BigDecimal("200.00"),
                             new BigDecimal("26.00"), new BigDecimal("226.00")));
 
-            // Act
             facturaService.crear(request, "user");
 
-            // Assert
             assertThat(captor.getValue().getCotizacionId()).isEqualTo(7L);
+        }
+
+        @Test
+        @DisplayName("debe lanzar RecursoNoEncontradoException cuando cotizacionId no existe")
+        void debeLanzarExcepcionCuandoCotizacionIdNoExiste() {
+            LineaFacturaRequest linea = new LineaFacturaRequest(
+                    "Consultoría", new BigDecimal("1"), new BigDecimal("200.00"));
+            FacturaRequest request = new FacturaRequest(
+                    1L, "Cliente", LocalDate.now().plusDays(30), null, List.of(linea), 99L);
+            when(cotizacionRepository.existsById(99L)).thenReturn(false);
+
+            assertThatThrownBy(() -> facturaService.crear(request, "user"))
+                    .isInstanceOf(RecursoNoEncontradoException.class)
+                    .hasMessageContaining("99");
         }
     }
 
