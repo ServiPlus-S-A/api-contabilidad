@@ -241,6 +241,112 @@ class CotizacionServiceTest {
         }
     }
 
+    @Nested
+    @DisplayName("enviar()")
+    class Enviar {
+
+        @Test
+        @DisplayName("debe transicionar de BORRADOR a ENVIADA y registrar audit")
+        void debeEnviarCuandoBorrador() {
+            // Arrange
+            Cotizacion cotizacion = cotizacionConEstado(EstadoCotizacion.BORRADOR);
+            when(cotizacionRepository.findById(1L)).thenReturn(Optional.of(cotizacion));
+            when(cotizacionRepository.save(any())).thenReturn(cotizacion);
+
+            // Act
+            CotizacionResponse response = cotizacionService.enviar(1L, "contador1");
+
+            // Assert
+            assertThat(response.estado()).isEqualTo(EstadoCotizacion.ENVIADA);
+            verify(auditLogRepository).save(any());
+            verify(eventPublisher, never()).publishEvent(any());
+        }
+
+        @Test
+        @DisplayName("debe lanzar TransicionInvalidaException si ya está ENVIADA")
+        void debeLanzarExcepcionSiYaEnviada() {
+            // Arrange
+            Cotizacion cotizacion = cotizacionConEstado(EstadoCotizacion.ENVIADA);
+            when(cotizacionRepository.findById(1L)).thenReturn(Optional.of(cotizacion));
+
+            // Act & Assert
+            assertThatThrownBy(() -> cotizacionService.enviar(1L, "contador1"))
+                    .isInstanceOf(TransicionInvalidaException.class)
+                    .hasMessageContaining("ENVIADA");
+        }
+
+        @Test
+        @DisplayName("debe lanzar RecursoNoEncontradoException si no existe")
+        void debeLanzarExcepcionSiNoExiste() {
+            // Arrange
+            when(cotizacionRepository.findById(99L)).thenReturn(Optional.empty());
+
+            // Act & Assert
+            assertThatThrownBy(() -> cotizacionService.enviar(99L, "admin"))
+                    .isInstanceOf(RecursoNoEncontradoException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("anular()")
+    class Anular {
+
+        @Test
+        @DisplayName("debe transicionar de BORRADOR a ANULADA")
+        void debeAnularDesdeBorrador() {
+            // Arrange
+            Cotizacion cotizacion = cotizacionConEstado(EstadoCotizacion.BORRADOR);
+            when(cotizacionRepository.findById(1L)).thenReturn(Optional.of(cotizacion));
+            when(cotizacionRepository.save(any())).thenReturn(cotizacion);
+
+            // Act
+            CotizacionResponse response = cotizacionService.anular(1L, "admin");
+
+            // Assert
+            assertThat(response.estado()).isEqualTo(EstadoCotizacion.ANULADA);
+            verify(auditLogRepository).save(any());
+        }
+
+        @Test
+        @DisplayName("debe transicionar de ENVIADA a ANULADA")
+        void debeAnularDesdeEnviada() {
+            // Arrange
+            Cotizacion cotizacion = cotizacionConEstado(EstadoCotizacion.ENVIADA);
+            when(cotizacionRepository.findById(1L)).thenReturn(Optional.of(cotizacion));
+            when(cotizacionRepository.save(any())).thenReturn(cotizacion);
+
+            // Act
+            CotizacionResponse response = cotizacionService.anular(1L, "admin");
+
+            // Assert
+            assertThat(response.estado()).isEqualTo(EstadoCotizacion.ANULADA);
+        }
+
+        @Test
+        @DisplayName("debe lanzar TransicionInvalidaException desde ACEPTADA — estado terminal")
+        void debeLanzarExcepcionDesdeAceptada() {
+            // Arrange
+            Cotizacion cotizacion = cotizacionConEstado(EstadoCotizacion.ACEPTADA);
+            when(cotizacionRepository.findById(1L)).thenReturn(Optional.of(cotizacion));
+
+            // Act & Assert
+            assertThatThrownBy(() -> cotizacionService.anular(1L, "admin"))
+                    .isInstanceOf(TransicionInvalidaException.class)
+                    .hasMessageContaining("ACEPTADA");
+        }
+
+        @Test
+        @DisplayName("debe lanzar RecursoNoEncontradoException si no existe")
+        void debeLanzarExcepcionSiNoExiste() {
+            // Arrange
+            when(cotizacionRepository.findById(99L)).thenReturn(Optional.empty());
+
+            // Act & Assert
+            assertThatThrownBy(() -> cotizacionService.anular(99L, "admin"))
+                    .isInstanceOf(RecursoNoEncontradoException.class);
+        }
+    }
+
     // ─── helpers ─────────────────────────────────────────────────────────────
 
     private Cotizacion cotizacionConEstado(EstadoCotizacion estado) {
