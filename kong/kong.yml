@@ -63,15 +63,13 @@ services:
             - Accept
           exposed_headers:
             - Authorization
-          credentials: true
+          credentials: false
           max_age: 3600
       - name: rate-limiting
         config:
-          minute: 120
+          minute: 300
           policy: local
           error_message: "Demasiadas solicitudes — intente en un momento"
-      - name: request-termination
-        enabled: false
 
   # ============================================================================
   # Frontend — Nginx on port 80
