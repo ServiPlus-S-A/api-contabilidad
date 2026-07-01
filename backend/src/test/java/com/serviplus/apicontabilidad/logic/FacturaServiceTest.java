@@ -53,8 +53,7 @@ class FacturaServiceTest {
                 new AppProperties.IvaConfig(new BigDecimal("0.13")),
                 new AppProperties.MinioConfig("http://localhost:9000", "key", "secret", "bucket"),
                 new AppProperties.EmailConfig("test@test.com"),
-                new AppProperties.CorsConfig("http://localhost:5173"),
-                "http://localhost:8000"
+                new AppProperties.CorsConfig("http://localhost:5173")
         );
         facturaService = new FacturaService(
                 facturaRepository, cotizacionRepository, auditLogRepository, eventPublisher,
