@@ -4,6 +4,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -46,6 +47,19 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getStatusCode().value()).isEqualTo(422);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().status()).isEqualTo(422);
+    }
+
+    @Test
+    @DisplayName("handleDataIntegrity devuelve 409 con mensaje de conflicto")
+    void handleDataIntegrityDevuelve409() {
+        DataIntegrityViolationException ex = new DataIntegrityViolationException("Duplicate entry");
+
+        ResponseEntity<ApiError> response = handler.handleDataIntegrity(ex);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().status()).isEqualTo(409);
+        assertThat(response.getBody().message()).contains("Conflicto");
     }
 
     @Test
