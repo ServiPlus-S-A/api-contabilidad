@@ -33,7 +33,7 @@ services:
           - PUT
           - DELETE
           - OPTIONS
-        preserve_host: false
+        preserve_host: true
       - name: swagger-route
         paths:
           - /swagger-ui
@@ -42,7 +42,7 @@ services:
         methods:
           - GET
           - OPTIONS
-        preserve_host: false
+        preserve_host: true
     plugins:
       - name: cors
         config:
