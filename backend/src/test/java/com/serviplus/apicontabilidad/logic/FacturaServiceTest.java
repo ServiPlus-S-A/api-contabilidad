@@ -214,12 +214,13 @@ class FacturaServiceTest {
         }
 
         @Test
-        @DisplayName("dos instancias con el mismo motivo son iguales (equals de record)")
+        @DisplayName("dos instancias con el mismo motivo son iguales (equals/hashCode/toString de record)")
         void dosInstanciasConMismoMotivoSonIguales() {
             AnularFacturaRequest a = new AnularFacturaRequest("mismo motivo exacto aquí");
             AnularFacturaRequest b = new AnularFacturaRequest("mismo motivo exacto aquí");
             assertThat(a).isEqualTo(b);
-            assertThat(a.hashCode()).isEqualTo(b.hashCode());
+            assertThat(a).hasSameHashCodeAs(b);
+            assertThat(a.toString()).contains("mismo motivo exacto aquí");
         }
     }
 
