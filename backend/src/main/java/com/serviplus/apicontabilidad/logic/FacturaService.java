@@ -74,6 +74,24 @@ public class FacturaService {
         return FacturaSerializer.toResponse(saved);
     }
 
+    public FacturaResponse anular(Long id, String motivo, String usuario) {
+        Factura factura = facturaRepository.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Factura no encontrada: " + id));
+
+        if (!factura.getEstado().puedeTransicionarA(EstadoFactura.ANULADA)) {
+            throw new TransicionInvalidaException(
+                    "Transición inválida: %s → ANULADA".formatted(factura.getEstado()));
+        }
+
+        factura.setEstado(EstadoFactura.ANULADA);
+        factura.setActualizadoEn(LocalDateTime.now(ZoneId.systemDefault()));
+        facturaRepository.save(factura);
+        registrarAudit(id, "FACTURA", "ANULAR", usuario, "Motivo: " + motivo);
+        log.info("Factura {} anulada por {}", factura.getNumero(), usuario);
+
+        return FacturaSerializer.toResponse(factura);
+    }
+
     public void actualizarPdfUrl(Long id, String pdfUrl) {
         Factura factura = facturaRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Factura no encontrada: " + id));
