@@ -218,9 +218,37 @@ class FacturaServiceTest {
         void dosInstanciasConMismoMotivoSonIguales() {
             AnularFacturaRequest a = new AnularFacturaRequest("mismo motivo exacto aquí");
             AnularFacturaRequest b = new AnularFacturaRequest("mismo motivo exacto aquí");
-            assertThat(a).isEqualTo(b);
-            assertThat(a).hasSameHashCodeAs(b);
+            assertThat(a).isEqualTo(b).hasSameHashCodeAs(b);
             assertThat(a.toString()).contains("mismo motivo exacto aquí");
+        }
+    }
+
+    @Nested
+    @DisplayName("actualizarPdfUrl()")
+    class ActualizarPdfUrl {
+
+        @Test
+        @DisplayName("debe asignar la URL del PDF y persistir la factura")
+        void debeActualizarPdfUrlYPersistir() {
+            Factura factura = facturaStub("FAC-2026-0001",
+                    new BigDecimal("100.00"), new BigDecimal("13.00"), new BigDecimal("113.00"));
+            when(facturaRepository.findById(1L)).thenReturn(Optional.of(factura));
+            when(facturaRepository.save(any())).thenReturn(factura);
+
+            facturaService.actualizarPdfUrl(1L, "https://minio/bucket/fac.pdf");
+
+            assertThat(factura.getPdfUrl()).isEqualTo("https://minio/bucket/fac.pdf");
+            verify(facturaRepository).save(factura);
+        }
+
+        @Test
+        @DisplayName("debe lanzar RecursoNoEncontradoException si no existe")
+        void debeLanzarExcepcionSiNoExiste() {
+            when(facturaRepository.findById(99L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> facturaService.actualizarPdfUrl(99L, "url"))
+                    .isInstanceOf(RecursoNoEncontradoException.class)
+                    .hasMessageContaining("99");
         }
     }
 
