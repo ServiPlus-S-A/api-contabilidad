@@ -5,6 +5,7 @@ import com.serviplus.apicontabilidad.data.AuditLogRepository;
 import com.serviplus.apicontabilidad.data.FacturaRepository;
 import com.serviplus.apicontabilidad.domain.EstadoFactura;
 import com.serviplus.apicontabilidad.domain.Factura;
+import com.serviplus.apicontabilidad.serializer.factura.AnularFacturaRequest;
 import com.serviplus.apicontabilidad.serializer.factura.FacturaRequest;
 import com.serviplus.apicontabilidad.serializer.factura.FacturaResponse;
 import com.serviplus.apicontabilidad.serializer.factura.LineaFacturaRequest;
@@ -158,16 +159,13 @@ class FacturaServiceTest {
         @Test
         @DisplayName("debe transicionar de PENDIENTE a ANULADA y registrar audit con motivo")
         void debeAnularFacturaPendiente() {
-            // Arrange
             Factura factura = facturaStub("FAC-2026-0001",
                     new BigDecimal("100.00"), new BigDecimal("13.00"), new BigDecimal("113.00"));
-            when(facturaRepository.findById(1L)).thenReturn(Optional.of(factura));
+            when(facturaRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(factura));
             when(facturaRepository.save(any())).thenReturn(factura);
 
-            // Act
             FacturaResponse response = facturaService.anular(1L, "Error de cobro", "admin");
 
-            // Assert
             assertThat(response.estado()).isEqualTo(EstadoFactura.ANULADA);
             verify(auditLogRepository).save(any());
         }
@@ -175,11 +173,9 @@ class FacturaServiceTest {
         @Test
         @DisplayName("debe lanzar TransicionInvalidaException si ya está PAGADA")
         void debeLanzarExcepcionSiYaPagada() {
-            // Arrange
             Factura factura = facturaStubConEstado(EstadoFactura.PAGADA);
-            when(facturaRepository.findById(1L)).thenReturn(Optional.of(factura));
+            when(facturaRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(factura));
 
-            // Act & Assert
             assertThatThrownBy(() -> facturaService.anular(1L, "intento de anulación", "admin"))
                     .isInstanceOf(TransicionInvalidaException.class)
                     .hasMessageContaining("PAGADA");
@@ -188,11 +184,9 @@ class FacturaServiceTest {
         @Test
         @DisplayName("debe lanzar TransicionInvalidaException si ya está ANULADA")
         void debeLanzarExcepcionSiYaAnulada() {
-            // Arrange
             Factura factura = facturaStubConEstado(EstadoFactura.ANULADA);
-            when(facturaRepository.findById(1L)).thenReturn(Optional.of(factura));
+            when(facturaRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(factura));
 
-            // Act & Assert
             assertThatThrownBy(() -> facturaService.anular(1L, "intento duplicado", "admin"))
                     .isInstanceOf(TransicionInvalidaException.class)
                     .hasMessageContaining("ANULADA");
@@ -201,12 +195,31 @@ class FacturaServiceTest {
         @Test
         @DisplayName("debe lanzar RecursoNoEncontradoException si no existe")
         void debeLanzarExcepcionSiNoExiste() {
-            // Arrange
-            when(facturaRepository.findById(99L)).thenReturn(Optional.empty());
+            when(facturaRepository.findByIdForUpdate(99L)).thenReturn(Optional.empty());
 
-            // Act & Assert
             assertThatThrownBy(() -> facturaService.anular(99L, "motivo válido aquí", "admin"))
                     .isInstanceOf(RecursoNoEncontradoException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("AnularFacturaRequest — record")
+    class AnularFacturaRequestTests {
+
+        @Test
+        @DisplayName("constructor y accessor exponen el motivo correctamente")
+        void debeExponerMotivo() {
+            AnularFacturaRequest req = new AnularFacturaRequest("motivo de anulación válido");
+            assertThat(req.motivo()).isEqualTo("motivo de anulación válido");
+        }
+
+        @Test
+        @DisplayName("dos instancias con el mismo motivo son iguales (equals de record)")
+        void dosInstanciasConMismoMotivoSonIguales() {
+            AnularFacturaRequest a = new AnularFacturaRequest("mismo motivo exacto aquí");
+            AnularFacturaRequest b = new AnularFacturaRequest("mismo motivo exacto aquí");
+            assertThat(a).isEqualTo(b);
+            assertThat(a.hashCode()).isEqualTo(b.hashCode());
         }
     }
 

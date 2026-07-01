@@ -25,6 +25,9 @@ import java.util.List;
 @Slf4j
 public class FacturaService {
 
+    private static final String ENTIDAD_FAC = "FACTURA";
+    private static final String MSG_FACTURA_NO_ENCONTRADA = "Factura no encontrada: ";
+
     private final FacturaRepository facturaRepository;
     private final AuditLogRepository auditLogRepository;
     private final ApplicationEventPublisher eventPublisher;
@@ -35,7 +38,7 @@ public class FacturaService {
     public FacturaResponse obtener(Long id) {
         return facturaRepository.findById(id)
                 .map(FacturaSerializer::toResponse)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Factura no encontrada: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException(MSG_FACTURA_NO_ENCONTRADA + id));
     }
 
     public FacturaResponse crear(FacturaRequest request, String usuario) {
@@ -67,7 +70,7 @@ public class FacturaService {
 
         Factura saved = facturaRepository.save(factura);
         log.info("Factura creada: {} por {}", numero, usuario);
-        registrarAudit(saved.getId(), "FACTURA", "CREAR", usuario, "Número: " + numero);
+        registrarAudit(saved.getId(), ENTIDAD_FAC, "CREAR", usuario, "Número: " + numero);
 
         eventPublisher.publishEvent(new FacturaCreadaEvent(this, saved));
 
@@ -75,8 +78,8 @@ public class FacturaService {
     }
 
     public FacturaResponse anular(Long id, String motivo, String usuario) {
-        Factura factura = facturaRepository.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Factura no encontrada: " + id));
+        Factura factura = facturaRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException(MSG_FACTURA_NO_ENCONTRADA + id));
 
         if (!factura.getEstado().puedeTransicionarA(EstadoFactura.ANULADA)) {
             throw new TransicionInvalidaException(
@@ -86,7 +89,7 @@ public class FacturaService {
         factura.setEstado(EstadoFactura.ANULADA);
         factura.setActualizadoEn(LocalDateTime.now(ZoneId.systemDefault()));
         facturaRepository.save(factura);
-        registrarAudit(id, "FACTURA", "ANULAR", usuario, "Motivo: " + motivo);
+        registrarAudit(id, ENTIDAD_FAC, "ANULAR", usuario, "Motivo: " + motivo);
         log.info("Factura {} anulada por {}", factura.getNumero(), usuario);
 
         return FacturaSerializer.toResponse(factura);
@@ -94,7 +97,7 @@ public class FacturaService {
 
     public void actualizarPdfUrl(Long id, String pdfUrl) {
         Factura factura = facturaRepository.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Factura no encontrada: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException(MSG_FACTURA_NO_ENCONTRADA + id));
         factura.setPdfUrl(pdfUrl);
         factura.setActualizadoEn(LocalDateTime.now(ZoneId.systemDefault()));
         facturaRepository.save(factura);
