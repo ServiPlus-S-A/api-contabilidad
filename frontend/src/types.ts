@@ -49,6 +49,7 @@ export interface FacturaResponse {
   total: number;
   saldo: number;
   pdfUrl?: string;
+  cotizacionId?: number;
   lineas: LineaFacturaResponse[];
   creadoEn: string;
   creadoPor: string;

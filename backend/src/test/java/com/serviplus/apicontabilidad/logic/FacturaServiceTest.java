@@ -72,7 +72,7 @@ class FacturaServiceTest {
             LineaFacturaRequest linea = new LineaFacturaRequest(
                     "Servicio", new BigDecimal("1"), new BigDecimal("500.00"));
             FacturaRequest request = new FacturaRequest(
-                    1L, "Cliente", LocalDate.now().plusDays(30), null, List.of(linea));
+                    1L, "Cliente", LocalDate.now().plusDays(30), null, List.of(linea), null);
 
             ArgumentCaptor<Factura> captor = ArgumentCaptor.forClass(Factura.class);
             Factura fake = facturaStub("FAC-2026-0001", new BigDecimal("500.00"),
@@ -98,7 +98,7 @@ class FacturaServiceTest {
             LineaFacturaRequest linea = new LineaFacturaRequest(
                     "Producto", new BigDecimal("2"), new BigDecimal("100.00"));
             FacturaRequest request = new FacturaRequest(
-                    1L, "Cliente", LocalDate.now().plusDays(30), null, List.of(linea));
+                    1L, "Cliente", LocalDate.now().plusDays(30), null, List.of(linea), null);
 
             ArgumentCaptor<Factura> captor = ArgumentCaptor.forClass(Factura.class);
             when(facturaRepository.save(captor.capture())).thenReturn(
@@ -123,7 +123,7 @@ class FacturaServiceTest {
             LineaFacturaRequest linea = new LineaFacturaRequest(
                     "X", new BigDecimal("1"), new BigDecimal("100.00"));
             FacturaRequest request = new FacturaRequest(
-                    1L, "C", LocalDate.now().plusDays(10), null, List.of(linea));
+                    1L, "C", LocalDate.now().plusDays(10), null, List.of(linea), null);
             when(facturaRepository.save(any())).thenReturn(
                     facturaStub("FAC-2026-0003", BigDecimal.TEN, BigDecimal.ONE,
                             new BigDecimal("11.00")));
@@ -133,6 +133,28 @@ class FacturaServiceTest {
 
             // Assert
             verify(eventPublisher).publishEvent(any());
+        }
+
+        @Test
+        @DisplayName("debe persistir cotizacionId en la factura cuando se provee")
+        void debeVincularCotizacionIdSiSeProvee() {
+            // Arrange
+            when(numeroGenerator.siguiente("FAC")).thenReturn("FAC-2026-0004");
+            LineaFacturaRequest linea = new LineaFacturaRequest(
+                    "Consultoría", new BigDecimal("1"), new BigDecimal("200.00"));
+            FacturaRequest request = new FacturaRequest(
+                    1L, "Cliente", LocalDate.now().plusDays(30), null, List.of(linea), 7L);
+
+            ArgumentCaptor<Factura> captor = ArgumentCaptor.forClass(Factura.class);
+            when(facturaRepository.save(captor.capture())).thenReturn(
+                    facturaStub("FAC-2026-0004", new BigDecimal("200.00"),
+                            new BigDecimal("26.00"), new BigDecimal("226.00")));
+
+            // Act
+            facturaService.crear(request, "user");
+
+            // Assert
+            assertThat(captor.getValue().getCotizacionId()).isEqualTo(7L);
         }
     }
 

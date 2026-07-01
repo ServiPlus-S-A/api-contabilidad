@@ -57,6 +57,7 @@ public class FacturaService {
                 .clienteNombre(request.clienteNombre())
                 .fechaVencimiento(request.fechaVencimiento())
                 .notas(request.notas())
+                .cotizacionId(request.cotizacionId())
                 .estado(EstadoFactura.PENDIENTE)
                 .subtotal(subtotal)
                 .impuesto(impuesto)

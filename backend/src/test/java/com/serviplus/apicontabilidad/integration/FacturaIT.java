@@ -60,7 +60,8 @@ class FacturaIT extends AbstractContainerIT {
                 List.of(new LineaFacturaRequest(
                         "Servicio de desarrollo",
                         new BigDecimal("1.00"),
-                        new BigDecimal("1000.00")))
+                        new BigDecimal("1000.00"))),
+                null
         );
     }
 

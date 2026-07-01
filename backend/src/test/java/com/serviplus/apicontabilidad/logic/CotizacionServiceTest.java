@@ -347,6 +347,34 @@ class CotizacionServiceTest {
         }
     }
 
+    @Nested
+    @DisplayName("listarFacturables()")
+    class ListarFacturables {
+
+        @Test
+        @DisplayName("debe retornar lista vacía cuando no hay cotizaciones facturables")
+        void debeRetornarListaVacia() {
+            when(cotizacionRepository.findFacturables(EstadoCotizacion.ACEPTADA))
+                    .thenReturn(List.of());
+
+            assertThat(cotizacionService.listarFacturables()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("debe retornar cotizaciones ACEPTADAS sin factura asociada")
+        void debeRetornarCotizacionesFacturables() {
+            Cotizacion cot = cotizacionConEstado(EstadoCotizacion.ACEPTADA);
+            when(cotizacionRepository.findFacturables(EstadoCotizacion.ACEPTADA))
+                    .thenReturn(List.of(cot));
+
+            List<CotizacionResponse> result = cotizacionService.listarFacturables();
+
+            assertThat(result).hasSize(1);
+            assertThat(result.getFirst().numero()).isEqualTo("COT-2026-0001");
+            assertThat(result.getFirst().estado()).isEqualTo(EstadoCotizacion.ACEPTADA);
+        }
+    }
+
     // ─── helpers ─────────────────────────────────────────────────────────────
 
     private Cotizacion cotizacionConEstado(EstadoCotizacion estado) {
