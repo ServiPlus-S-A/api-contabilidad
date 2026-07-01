@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -93,6 +94,24 @@ public class FacturaService {
         log.info("Factura {} anulada por {}", factura.getNumero(), usuario);
 
         return FacturaSerializer.toResponse(factura);
+    }
+
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public PdfDescarga descargarPdf(Long id, String usuario) {
+        Factura factura = facturaRepository.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException(MSG_FACTURA_NO_ENCONTRADA + id));
+        String pdfUrl = factura.getPdfUrl();
+        if (pdfUrl == null || pdfUrl.isBlank()) {
+            throw new RecursoNoEncontradoException(
+                    "PDF aún no disponible para la factura: " + factura.getNumero());
+        }
+        String bucket = appProperties.minio().bucket();
+        String objectName = pdfUrl.substring(pdfUrl.indexOf("/" + bucket + "/") + bucket.length() + 2);
+        String nombreArchivo = "Factura_%s_%s.pdf".formatted(
+                factura.getNumero(),
+                factura.getClienteNombre().replaceAll("[^a-zA-Z0-9_\\-]", "_"));
+        registrarAudit(id, ENTIDAD_FAC, "DESCARGAR_PDF", usuario, factura.getNumero());
+        return new PdfDescarga(objectName, nombreArchivo);
     }
 
     public void actualizarPdfUrl(Long id, String pdfUrl) {

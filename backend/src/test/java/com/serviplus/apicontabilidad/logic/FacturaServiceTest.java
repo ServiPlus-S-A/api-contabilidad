@@ -9,6 +9,7 @@ import com.serviplus.apicontabilidad.serializer.factura.AnularFacturaRequest;
 import com.serviplus.apicontabilidad.serializer.factura.FacturaRequest;
 import com.serviplus.apicontabilidad.serializer.factura.FacturaResponse;
 import com.serviplus.apicontabilidad.serializer.factura.LineaFacturaRequest;
+import com.serviplus.apicontabilidad.serializer.factura.PdfDescarga;
 import com.serviplus.apicontabilidad.utility.NumeroGenerator;
 import com.serviplus.apicontabilidad.utility.RecursoNoEncontradoException;
 import com.serviplus.apicontabilidad.utility.TransicionInvalidaException;
@@ -249,6 +250,83 @@ class FacturaServiceTest {
             assertThatThrownBy(() -> facturaService.actualizarPdfUrl(99L, "url"))
                     .isInstanceOf(RecursoNoEncontradoException.class)
                     .hasMessageContaining("99");
+        }
+    }
+
+    @Nested
+    @DisplayName("descargarPdf()")
+    class DescargarPdf {
+
+        @Test
+        @DisplayName("debe retornar metadata y registrar audit cuando el PDF está listo")
+        void debeRetornarMetadataYAudit() {
+            Factura factura = facturaStub("FAC-2026-0001",
+                    new BigDecimal("100.00"), new BigDecimal("13.00"), new BigDecimal("113.00"));
+            factura.setPdfUrl("http://localhost:9000/bucket/facturas/FAC-2026-0001.pdf");
+            when(facturaRepository.findById(1L)).thenReturn(Optional.of(factura));
+
+            PdfDescarga result = facturaService.descargarPdf(1L, "admin");
+
+            assertThat(result.objectName()).isEqualTo("facturas/FAC-2026-0001.pdf");
+            assertThat(result.nombreArchivo()).startsWith("Factura_FAC-2026-0001_");
+            verify(auditLogRepository).save(any());
+        }
+
+        @Test
+        @DisplayName("debe lanzar RecursoNoEncontradoException cuando pdfUrl es null")
+        void debeLanzarExcepcionSiPdfUrlNulo() {
+            Factura factura = facturaStub("FAC-2026-0001",
+                    new BigDecimal("100.00"), new BigDecimal("13.00"), new BigDecimal("113.00"));
+            when(facturaRepository.findById(1L)).thenReturn(Optional.of(factura));
+
+            assertThatThrownBy(() -> facturaService.descargarPdf(1L, "admin"))
+                    .isInstanceOf(RecursoNoEncontradoException.class)
+                    .hasMessageContaining("FAC-2026-0001");
+        }
+
+        @Test
+        @DisplayName("debe lanzar RecursoNoEncontradoException cuando pdfUrl está en blanco")
+        void debeLanzarExcepcionSiPdfUrlEnBlanco() {
+            Factura factura = facturaStub("FAC-2026-0001",
+                    new BigDecimal("100.00"), new BigDecimal("13.00"), new BigDecimal("113.00"));
+            factura.setPdfUrl("   ");
+            when(facturaRepository.findById(1L)).thenReturn(Optional.of(factura));
+
+            assertThatThrownBy(() -> facturaService.descargarPdf(1L, "admin"))
+                    .isInstanceOf(RecursoNoEncontradoException.class)
+                    .hasMessageContaining("FAC-2026-0001");
+        }
+
+        @Test
+        @DisplayName("debe lanzar RecursoNoEncontradoException cuando factura no existe")
+        void debeLanzarExcepcionSiFacturaNoExiste() {
+            when(facturaRepository.findById(99L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> facturaService.descargarPdf(99L, "admin"))
+                    .isInstanceOf(RecursoNoEncontradoException.class)
+                    .hasMessageContaining("99");
+        }
+    }
+
+    @Nested
+    @DisplayName("PdfDescarga — record")
+    class PdfDescargaTests {
+
+        @Test
+        @DisplayName("constructor y accessors exponen objectName y nombreArchivo")
+        void debeExponerCampos() {
+            PdfDescarga pdf = new PdfDescarga("facturas/FAC-2026-0001.pdf", "Factura_FAC-2026-0001_Cliente.pdf");
+            assertThat(pdf.objectName()).isEqualTo("facturas/FAC-2026-0001.pdf");
+            assertThat(pdf.nombreArchivo()).isEqualTo("Factura_FAC-2026-0001_Cliente.pdf");
+        }
+
+        @Test
+        @DisplayName("equals, hashCode y toString del record")
+        void debeImplementarEqualsHashCodeToString() {
+            PdfDescarga a = new PdfDescarga("facturas/FAC.pdf", "nombre.pdf");
+            PdfDescarga b = new PdfDescarga("facturas/FAC.pdf", "nombre.pdf");
+            assertThat(a).isEqualTo(b).hasSameHashCodeAs(b);
+            assertThat(a.toString()).contains("nombre.pdf");
         }
     }
 

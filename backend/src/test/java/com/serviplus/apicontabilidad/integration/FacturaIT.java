@@ -140,6 +140,24 @@ class FacturaIT extends AbstractContainerIT {
         }
     }
 
+    // ── GET /api/v1/facturas/{id}/pdf ────────────────────────────────────────
+
+    @Nested
+    @DisplayName("GET /api/v1/facturas/{id}/pdf")
+    class DescargarPdf {
+
+        @Test
+        @DisplayName("404 cuando la factura no existe")
+        void debeRetornar404CuandoFacturaNoExiste() {
+            ResponseEntity<String> res = restTemplate.exchange(
+                    url("/api/v1/facturas/999999/pdf"), HttpMethod.GET,
+                    new HttpEntity<>(authHeaders(JwtTestHelper.contadorToken())),
+                    String.class);
+
+            assertThat(res.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        }
+    }
+
     // ── PUT /api/v1/facturas/{id}/anular ─────────────────────────────────────
 
     @Nested
