@@ -1,10 +1,10 @@
 services:
   mariadb:
-    image: 'mariadb:latest'
+    image: 'mariadb:11.4-jammy'
     environment:
-      - 'MARIADB_DATABASE=mydatabase'
-      - 'MARIADB_PASSWORD=secret'
-      - 'MARIADB_ROOT_PASSWORD=verysecret'
-      - 'MARIADB_USER=myuser'
+      - MARIADB_DATABASE=${DB_NAME:-contabilidad}
+      - MARIADB_PASSWORD=${DB_PASSWORD}
+      - MARIADB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      - MARIADB_USER=${DB_USER:-app}
     ports:
       - '3306'

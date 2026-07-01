@@ -14,19 +14,20 @@ export default function DetalleCotizacionPage() {
   useEffect(() => {
     if (!id) return;
     const token = localStorage.getItem('access_token');
-    void axios
-      .get<CotizacionResponse>(`${API}/cotizaciones/${id}`, {
-        headers: { Authorization: `Bearer ${token ?? ''}` },
-      })
-      .then((res) => {
+    async function load() {
+      try {
+        const res = await axios.get<CotizacionResponse>(`${API}/cotizaciones/${id}`, {
+          headers: { Authorization: `Bearer ${token ?? ''}` },
+        });
         setCotizacion(res.data);
-      })
-      .catch(() => {
+      } catch {
         toast.error('Error al cargar la cotización');
-      })
-      .finally(() => {
+      } finally {
         setLoading(false);
-      });
+      }
+    }
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    load();
   }, [id]);
 
   if (loading) return <p>Cargando...</p>;

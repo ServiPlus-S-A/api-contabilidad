@@ -56,6 +56,9 @@ public class Factura {
     @Column(name = "pdf_url", length = 500)
     private String pdfUrl;
 
+    @Column(name = "cotizacion_id")
+    private Long cotizacionId;
+
     @OneToMany(mappedBy = "factura", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
     private List<LineaFactura> lineas = new ArrayList<>();

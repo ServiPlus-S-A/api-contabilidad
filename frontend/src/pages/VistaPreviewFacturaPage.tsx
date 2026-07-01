@@ -14,19 +14,20 @@ export default function VistaPreviewFacturaPage() {
   useEffect(() => {
     if (!id) return;
     const token = localStorage.getItem('access_token');
-    void axios
-      .get<FacturaResponse>(`${API}/facturas/${id}`, {
-        headers: { Authorization: `Bearer ${token ?? ''}` },
-      })
-      .then((res) => {
+    async function load() {
+      try {
+        const res = await axios.get<FacturaResponse>(`${API}/facturas/${id}`, {
+          headers: { Authorization: `Bearer ${token ?? ''}` },
+        });
         setFactura(res.data);
-      })
-      .catch(() => {
+      } catch {
         toast.error('Error al cargar la factura');
-      })
-      .finally(() => {
+      } finally {
         setLoading(false);
-      });
+      }
+    }
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    load();
   }, [id]);
 
   if (loading) return <p>Cargando factura...</p>;

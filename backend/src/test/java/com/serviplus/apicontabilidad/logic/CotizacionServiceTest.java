@@ -49,11 +49,12 @@ class CotizacionServiceTest {
     @BeforeEach
     void setUp() {
         appProperties = new AppProperties(
-                new AppProperties.JwtConfig("test-secret-min-32-chars-for-hmac"),
+                new AppProperties.JwtConfig("test-secret-min-32-chars-for-hmac", 86400000L),
                 new AppProperties.IvaConfig(new BigDecimal("0.13")),
                 new AppProperties.MinioConfig("http://localhost:9000", "key", "secret", "bucket"),
                 new AppProperties.EmailConfig("test@test.com"),
-                new AppProperties.CorsConfig("http://localhost:5173")
+                new AppProperties.CorsConfig("http://localhost:5173"),
+                "http://localhost:8000"
         );
         // Manually inject — @InjectMocks works on constructor but AppProperties
         // uses a real instance, so we use constructor injection via reflection or
@@ -237,6 +238,140 @@ class CotizacionServiceTest {
             // Act & Assert
             assertThatThrownBy(() -> cotizacionService.rechazar(1L, "admin"))
                     .isInstanceOf(TransicionInvalidaException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("enviar()")
+    class Enviar {
+
+        @Test
+        @DisplayName("debe transicionar de BORRADOR a ENVIADA y registrar audit")
+        void debeEnviarCuandoBorrador() {
+            // Arrange
+            Cotizacion cotizacion = cotizacionConEstado(EstadoCotizacion.BORRADOR);
+            when(cotizacionRepository.findById(1L)).thenReturn(Optional.of(cotizacion));
+            when(cotizacionRepository.save(any())).thenReturn(cotizacion);
+
+            // Act
+            CotizacionResponse response = cotizacionService.enviar(1L, "contador1");
+
+            // Assert
+            assertThat(response.estado()).isEqualTo(EstadoCotizacion.ENVIADA);
+            verify(auditLogRepository).save(any());
+            verify(eventPublisher, never()).publishEvent(any());
+        }
+
+        @Test
+        @DisplayName("debe lanzar TransicionInvalidaException si ya está ENVIADA")
+        void debeLanzarExcepcionSiYaEnviada() {
+            // Arrange
+            Cotizacion cotizacion = cotizacionConEstado(EstadoCotizacion.ENVIADA);
+            when(cotizacionRepository.findById(1L)).thenReturn(Optional.of(cotizacion));
+
+            // Act & Assert
+            assertThatThrownBy(() -> cotizacionService.enviar(1L, "contador1"))
+                    .isInstanceOf(TransicionInvalidaException.class)
+                    .hasMessageContaining("ENVIADA");
+        }
+
+        @Test
+        @DisplayName("debe lanzar RecursoNoEncontradoException si no existe")
+        void debeLanzarExcepcionSiNoExiste() {
+            // Arrange
+            when(cotizacionRepository.findById(99L)).thenReturn(Optional.empty());
+
+            // Act & Assert
+            assertThatThrownBy(() -> cotizacionService.enviar(99L, "admin"))
+                    .isInstanceOf(RecursoNoEncontradoException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("anular()")
+    class Anular {
+
+        @Test
+        @DisplayName("debe transicionar de BORRADOR a ANULADA")
+        void debeAnularDesdeBorrador() {
+            // Arrange
+            Cotizacion cotizacion = cotizacionConEstado(EstadoCotizacion.BORRADOR);
+            when(cotizacionRepository.findById(1L)).thenReturn(Optional.of(cotizacion));
+            when(cotizacionRepository.save(any())).thenReturn(cotizacion);
+
+            // Act
+            CotizacionResponse response = cotizacionService.anular(1L, "admin");
+
+            // Assert
+            assertThat(response.estado()).isEqualTo(EstadoCotizacion.ANULADA);
+            verify(auditLogRepository).save(any());
+        }
+
+        @Test
+        @DisplayName("debe transicionar de ENVIADA a ANULADA")
+        void debeAnularDesdeEnviada() {
+            // Arrange
+            Cotizacion cotizacion = cotizacionConEstado(EstadoCotizacion.ENVIADA);
+            when(cotizacionRepository.findById(1L)).thenReturn(Optional.of(cotizacion));
+            when(cotizacionRepository.save(any())).thenReturn(cotizacion);
+
+            // Act
+            CotizacionResponse response = cotizacionService.anular(1L, "admin");
+
+            // Assert
+            assertThat(response.estado()).isEqualTo(EstadoCotizacion.ANULADA);
+        }
+
+        @Test
+        @DisplayName("debe lanzar TransicionInvalidaException desde ACEPTADA — estado terminal")
+        void debeLanzarExcepcionDesdeAceptada() {
+            // Arrange
+            Cotizacion cotizacion = cotizacionConEstado(EstadoCotizacion.ACEPTADA);
+            when(cotizacionRepository.findById(1L)).thenReturn(Optional.of(cotizacion));
+
+            // Act & Assert
+            assertThatThrownBy(() -> cotizacionService.anular(1L, "admin"))
+                    .isInstanceOf(TransicionInvalidaException.class)
+                    .hasMessageContaining("ACEPTADA");
+        }
+
+        @Test
+        @DisplayName("debe lanzar RecursoNoEncontradoException si no existe")
+        void debeLanzarExcepcionSiNoExiste() {
+            // Arrange
+            when(cotizacionRepository.findById(99L)).thenReturn(Optional.empty());
+
+            // Act & Assert
+            assertThatThrownBy(() -> cotizacionService.anular(99L, "admin"))
+                    .isInstanceOf(RecursoNoEncontradoException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("listarFacturables()")
+    class ListarFacturables {
+
+        @Test
+        @DisplayName("debe retornar lista vacía cuando no hay cotizaciones facturables")
+        void debeRetornarListaVacia() {
+            when(cotizacionRepository.findFacturables(EstadoCotizacion.ACEPTADA))
+                    .thenReturn(List.of());
+
+            assertThat(cotizacionService.listarFacturables()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("debe retornar cotizaciones ACEPTADAS sin factura asociada")
+        void debeRetornarCotizacionesFacturables() {
+            Cotizacion cot = cotizacionConEstado(EstadoCotizacion.ACEPTADA);
+            when(cotizacionRepository.findFacturables(EstadoCotizacion.ACEPTADA))
+                    .thenReturn(List.of(cot));
+
+            List<CotizacionResponse> result = cotizacionService.listarFacturables();
+
+            assertThat(result).hasSize(1);
+            assertThat(result.getFirst().numero()).isEqualTo("COT-2026-0001");
+            assertThat(result.getFirst().estado()).isEqualTo(EstadoCotizacion.ACEPTADA);
         }
     }
 

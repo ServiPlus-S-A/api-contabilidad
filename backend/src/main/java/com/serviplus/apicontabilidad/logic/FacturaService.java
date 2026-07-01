@@ -3,6 +3,7 @@ package com.serviplus.apicontabilidad.logic;
 import com.serviplus.apicontabilidad.async.event.FacturaCreadaEvent;
 import com.serviplus.apicontabilidad.config.AppProperties;
 import com.serviplus.apicontabilidad.data.AuditLogRepository;
+import com.serviplus.apicontabilidad.data.CotizacionRepository;
 import com.serviplus.apicontabilidad.data.FacturaRepository;
 import com.serviplus.apicontabilidad.domain.*;
 import com.serviplus.apicontabilidad.serializer.factura.*;
@@ -11,13 +12,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -25,7 +27,11 @@ import java.util.stream.Collectors;
 @Slf4j
 public class FacturaService {
 
+    private static final String ENTIDAD_FAC = "FACTURA";
+    private static final String MSG_FACTURA_NO_ENCONTRADA = "Factura no encontrada: ";
+
     private final FacturaRepository facturaRepository;
+    private final CotizacionRepository cotizacionRepository;
     private final AuditLogRepository auditLogRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final NumeroGenerator numeroGenerator;
@@ -35,10 +41,14 @@ public class FacturaService {
     public FacturaResponse obtener(Long id) {
         return facturaRepository.findById(id)
                 .map(FacturaSerializer::toResponse)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Factura no encontrada: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException(MSG_FACTURA_NO_ENCONTRADA + id));
     }
 
     public FacturaResponse crear(FacturaRequest request, String usuario) {
+        if (request.cotizacionId() != null
+                && !cotizacionRepository.existsById(request.cotizacionId())) {
+            throw new RecursoNoEncontradoException("Cotización no encontrada: " + request.cotizacionId());
+        }
         BigDecimal ivaRate = appProperties.iva().rate();
         String numero = numeroGenerator.siguiente("FAC");
 
@@ -53,12 +63,13 @@ public class FacturaService {
                 .clienteNombre(request.clienteNombre())
                 .fechaVencimiento(request.fechaVencimiento())
                 .notas(request.notas())
+                .cotizacionId(request.cotizacionId())
                 .estado(EstadoFactura.PENDIENTE)
                 .subtotal(subtotal)
                 .impuesto(impuesto)
                 .total(total)
                 .saldo(total)
-                .creadoEn(LocalDateTime.now())
+                .creadoEn(LocalDateTime.now(ZoneId.systemDefault()))
                 .creadoPor(usuario)
                 .build();
 
@@ -67,18 +78,54 @@ public class FacturaService {
 
         Factura saved = facturaRepository.save(factura);
         log.info("Factura creada: {} por {}", numero, usuario);
-        registrarAudit(saved.getId(), "FACTURA", "CREAR", usuario, "Número: " + numero);
+        registrarAudit(saved.getId(), ENTIDAD_FAC, "CREAR", usuario, "Número: " + numero);
 
         eventPublisher.publishEvent(new FacturaCreadaEvent(this, saved));
 
         return FacturaSerializer.toResponse(saved);
     }
 
+    public FacturaResponse anular(Long id, String motivo, String usuario) {
+        Factura factura = facturaRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException(MSG_FACTURA_NO_ENCONTRADA + id));
+
+        if (!factura.getEstado().puedeTransicionarA(EstadoFactura.ANULADA)) {
+            throw new TransicionInvalidaException(
+                    "Transición inválida: %s → ANULADA".formatted(factura.getEstado()));
+        }
+
+        factura.setEstado(EstadoFactura.ANULADA);
+        factura.setActualizadoEn(LocalDateTime.now(ZoneId.systemDefault()));
+        facturaRepository.save(factura);
+        registrarAudit(id, ENTIDAD_FAC, "ANULAR", usuario, "Motivo: " + motivo);
+        log.info("Factura {} anulada por {}", factura.getNumero(), usuario);
+
+        return FacturaSerializer.toResponse(factura);
+    }
+
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public PdfDescarga descargarPdf(Long id, String usuario) {
+        Factura factura = facturaRepository.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException(MSG_FACTURA_NO_ENCONTRADA + id));
+        String pdfUrl = factura.getPdfUrl();
+        if (pdfUrl == null || pdfUrl.isBlank()) {
+            throw new RecursoNoEncontradoException(
+                    "PDF aún no disponible para la factura: " + factura.getNumero());
+        }
+        String bucket = appProperties.minio().bucket();
+        String objectName = pdfUrl.substring(pdfUrl.indexOf("/" + bucket + "/") + bucket.length() + 2);
+        String nombreArchivo = "Factura_%s_%s.pdf".formatted(
+                factura.getNumero(),
+                factura.getClienteNombre().replaceAll("[^a-zA-Z0-9_\\-]", "_"));
+        registrarAudit(id, ENTIDAD_FAC, "DESCARGAR_PDF", usuario, factura.getNumero());
+        return new PdfDescarga(objectName, nombreArchivo);
+    }
+
     public void actualizarPdfUrl(Long id, String pdfUrl) {
         Factura factura = facturaRepository.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Factura no encontrada: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException(MSG_FACTURA_NO_ENCONTRADA + id));
         factura.setPdfUrl(pdfUrl);
-        factura.setActualizadoEn(LocalDateTime.now());
+        factura.setActualizadoEn(LocalDateTime.now(ZoneId.systemDefault()));
         facturaRepository.save(factura);
     }
 
@@ -93,7 +140,7 @@ public class FacturaService {
                     .precioUnitario(r.precioUnitario())
                     .subtotal(subtotalLinea)
                     .build();
-        }).collect(Collectors.toList());
+        }).toList();
     }
 
     private BigDecimal sumarSubtotales(List<LineaFactura> lineas) {
@@ -109,7 +156,7 @@ public class FacturaService {
                 .accion(accion)
                 .usuario(usuario)
                 .detalle(detalle)
-                .timestamp(LocalDateTime.now())
+                .timestamp(LocalDateTime.now(ZoneId.systemDefault()))
                 .build());
     }
 }

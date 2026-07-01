@@ -1,132 +1,137 @@
-# Contributing to api-contabilidad
+# Contribuir a api-contabilidad
 
-## Branch naming
+## Nomenclatura de ramas
 
-```
-feature/HU-XX-short-description      ← new feature, from develop
-hotfix/HU-XX-short-description       ← urgent fix, from main → merged into main AND develop
-```
-
-With role differentiation:
+Cada integrante trabaja en su **rama personal** nombrada con las dos iniciales de su nombre completo, guion bajo y apellido:
 
 ```
-feature/HUC-XX-...   ← Cliente role
-feature/HUF-XX-...   ← Funcionario role
-feature/HUA-XX-...   ← Administrador role
+jm_rodriguez   ← Juan M. Rodríguez
+ja_ochoa       ← J. A. Ochoa
+ja_ortiz       ← J. A. Ortiz
 ```
 
-| Branch type | Created from | Merges into |
-|-------------|-------------|-------------|
-| `feature/` | `develop` | `develop` |
-| `hotfix/` | `main` | `main` + `develop` |
+| Tipo de rama | Se crea desde | Merge hacia |
+|---|---|---|
+| Personal (`iniciales_apellido`) | `develop` | `develop` |
+| `hotfix/HU-XX-descripcion` | `main` | `main` + `develop` |
 
-Never branch from another feature branch without lead approval.
+Solo `develop` puede abrir un PR hacia `main`. Las ramas personales nunca van directo a `main`.
 
 ---
 
-## Commit format
+## Formato de commits
 
 ```
-<type>: <description ≤72 chars in English>
+<tipo>: <descripción ≤72 caracteres en español>
 ```
 
-| Type | When to use |
-|------|-------------|
-| `feat` | New feature |
-| `fix` | Bug fix |
-| `refactor` | Code change without behavior change |
-| `test` | Adding or updating tests |
-| `chore` | Build, CI, config, dependencies |
-| `docs` | Documentation only |
-| `style` | Formatting, lint |
+| Tipo | Cuándo usarlo |
+|------|---------------|
+| `feat` | Nueva funcionalidad |
+| `fix` | Corrección de bug |
+| `refactor` | Cambio de código sin cambio de comportamiento |
+| `test` | Agregar o actualizar pruebas |
+| `chore` | Build, CI, configuración, dependencias |
+| `docs` | Solo documentación |
+| `style` | Formato, lint |
 
-One commit per logical unit of work. Never go more than 2 hours without committing.
+Un commit por unidad lógica de trabajo. Nunca más de 2 horas sin commitear.
 
 ---
 
-## Workflow
+## Flujo de trabajo
 
 ```bash
-# 1. Branch from develop
+# 1. Partir siempre desde develop actualizado
 git checkout develop && git pull origin develop
-git checkout -b feature/HU-XX-my-feature
+git checkout iniciales_apellido   # tu rama personal (ej: jm_rodriguez)
+git merge develop                 # incorporar los últimos cambios
 
-# 2. Work, commit often
-git add <files>
-git commit -m "feat: add X to Y"
+# 2. Trabajar y commitear seguido
+git add <archivos>
+git commit -m "feat: agregar X a Y"
 
-# 3. Push and open PR targeting develop
-git push origin feature/HU-XX-my-feature
+# 3. Push y abrir PR apuntando a develop
+git push origin iniciales_apellido
 gh pr create --base develop
 ```
 
 ---
 
-## Before opening a PR
+## Antes de abrir un PR
 
-Run all checks locally:
+Ejecutar todas las verificaciones localmente:
 
 ```bash
 # Backend
 cd backend
-./mvnw test          # Unit tests
-./mvnw verify        # Integration tests + 80% JaCoCo gate
+./mvnw test          # Pruebas unitarias
+./mvnw verify        # Pruebas de integración + gate JaCoCo 80%
 
 # Frontend
 cd frontend
 npm run format:check # Prettier
 npm run lint         # ESLint
 npm run type-check   # TypeScript
-npm test             # Vitest (29 tests, 80%+ coverage)
+npm test             # Vitest (29 tests, 80%+ cobertura)
 ```
 
-All must pass. CI runs the same checks and will block merge on failure.
+Todos deben pasar. El CI ejecuta las mismas verificaciones y bloqueará el merge ante cualquier fallo.
 
 ---
 
-## PR template
+## Plantilla de PR
 
 ```markdown
-## Summary
-Briefly explain what this PR does and why.
+## Historia de Usuario
+Enlace: [HU-XX - Nombre](<link>)
 
-## Changes
-- Main change 1
-- Main change 2
+## ¿Qué hace este PR?
+Descripción concisa.
 
-## Notes
-(optional) Anything reviewers should be aware of.
+## Cambios Realizados
+- [ ] Cambio 1
+
+## Cómo Probar
+1. Paso 1
+2. Resultado esperado
+
+## Checklist
+- [ ] Compila sin errores
+- [ ] Tests pasan localmente
+- [ ] Sin console.log ni código comentado
+- [ ] Rama actualizada con develop
 ```
 
-PRs must be written in English. Qodo reviews every PR automatically — address all "Action required" findings before requesting human review.
+Los PRs deben escribirse en español. Qodo revisa cada PR automáticamente — atender todos los hallazgos marcados como "Action required" antes de solicitar revisión humana.
 
 ---
 
-## Coding standards
+## Estándares de código
 
-- **No comments** unless the WHY is non-obvious
-- **Java records** for all DTOs — immutable by design
-- **Lombok** on entities: `@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder`
-- **No hardcoded values** — all config via `AppProperties` (bound from `.env`)
-- **Strict layering**: View never imports Data; Logic never imports View
-- **BigDecimal** for all money, `RoundingMode.HALF_UP`, scale 2
-- **Never** use `any` in TypeScript — use `unknown` + type guard
-- **Never** commit `.env`, `.env.local`, `.env.dev`
+- **Sin comentarios** a menos que el POR QUÉ no sea obvio
+- **Java records** para todos los DTOs — inmutables por diseño
+- **Lombok** en entidades: `@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder`
+- **Sin valores hardcodeados** — toda configuración vía `AppProperties` (desde `.env`)
+- **Capas estrictas**: View nunca importa Data; Logic nunca importa View
+- **BigDecimal** para todo lo monetario, `RoundingMode.HALF_UP`, escala 2
+- **Nunca** usar `any` en TypeScript — usar `unknown` + type guard
+- **Nunca** commitear `.env`, `.env.local`, `.env.dev`
 
 ---
 
-## Running specific tests
+## Ejecutar pruebas específicas
 
 ```bash
-# Backend — single unit test class
+# Backend — clase de prueba unitaria individual
 ./mvnw test -Dtest=CotizacionServiceTest
 
-# Backend — single integration test
+# Backend — prueba de integración individual
 ./mvnw verify -Dit.test=CotizacionIT
 
-# Frontend — single test file
+# Frontend — archivo de prueba individual
 npx vitest run src/__tests__/LoginPage.test.tsx
 
-# Frontend — E2E (no backend needed, API mocked)
+# Frontend — E2E (sin backend, API mockeada)
 npm run test:e2e
 ```

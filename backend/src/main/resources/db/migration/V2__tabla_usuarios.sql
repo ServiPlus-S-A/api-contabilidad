@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS usuarios (
+    id         BIGINT AUTO_INCREMENT PRIMARY KEY,
+    username   VARCHAR(50)  NOT NULL UNIQUE,
+    password   VARCHAR(255) NOT NULL,
+    role       VARCHAR(30)  NOT NULL,
+    activo     BOOLEAN      NOT NULL DEFAULT TRUE,
+    creado_en  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

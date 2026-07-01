@@ -7,5 +7,5 @@ import { Navigate, Outlet } from 'react-router-dom';
  */
 export default function RouteGuard() {
   const token = localStorage.getItem('access_token');
-  return token !== null ? <Outlet /> : <Navigate to="/login" replace />;
+  return token ? <Outlet /> : <Navigate to="/login" replace />;
 }

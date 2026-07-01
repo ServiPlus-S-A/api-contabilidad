@@ -40,3 +40,6 @@ frontend/coverage/
 
 # Docker
 *.pid
+
+# Documentación interna de presentación (no va al repositorio)
+_presentation/

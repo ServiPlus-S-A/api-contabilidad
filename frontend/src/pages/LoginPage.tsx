@@ -39,8 +39,11 @@ export default function LoginPage() {
 
         <form onSubmit={(e) => void handleSubmit(e)} style={styles.form}>
           <div style={styles.field}>
-            <label style={styles.label}>Usuario</label>
+            <label htmlFor="username" style={styles.label}>
+              Usuario
+            </label>
             <input
+              id="username"
               style={styles.input}
               type="text"
               value={username}
@@ -54,8 +57,11 @@ export default function LoginPage() {
           </div>
 
           <div style={styles.field}>
-            <label style={styles.label}>Contraseña</label>
+            <label htmlFor="password" style={styles.label}>
+              Contraseña
+            </label>
             <input
+              id="password"
               style={styles.input}
               type="password"
               value={password}

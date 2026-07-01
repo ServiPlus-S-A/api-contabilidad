@@ -11,16 +11,18 @@ export default function PanelCotizacionesPage() {
 
   const fetchAll = useCallback(() => {
     const token = localStorage.getItem('access_token');
-    void axios
-      .get<CotizacionResponse[]>(`${API}/cotizaciones`, {
-        headers: { Authorization: `Bearer ${token ?? ''}` },
-      })
-      .then((res) => {
+    async function load() {
+      try {
+        const res = await axios.get<CotizacionResponse[]>(`${API}/cotizaciones`, {
+          headers: { Authorization: `Bearer ${token ?? ''}` },
+        });
         setCotizaciones(res.data);
-      })
-      .catch(() => {
+      } catch {
         toast.error('Error al cargar el panel');
-      });
+      }
+    }
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    load();
   }, []);
 
   useEffect(() => {
@@ -37,7 +39,8 @@ export default function PanelCotizacionesPage() {
   };
 
   const handleActionSafe = (id: number, action: 'aprobar' | 'rechazar') => {
-    void handleAction(id, action).catch(() => {
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    handleAction(id, action).catch(() => {
       toast.error(`Error al ${action} la cotización`);
     });
   };

@@ -16,9 +16,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -32,6 +32,8 @@ public class CotizacionService {
     private final NumeroGenerator numeroGenerator;
     private final AppProperties appProperties;
 
+    private static final String ENTIDAD_COT = "COTIZACION";
+
     @Transactional(readOnly = true)
     public List<CotizacionResponse> listar(String usuario, Collection<String> roles) {
         boolean esAdminOContador = roles.stream()
@@ -42,6 +44,14 @@ public class CotizacionService {
                 : cotizacionRepository.findByCreadoPorOrderByCreadoEnDesc(usuario);
 
         return cotizaciones.stream()
+                .map(CotizacionSerializer::toResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<CotizacionResponse> listarFacturables() {
+        return cotizacionRepository.findFacturables(EstadoCotizacion.ACEPTADA)
+                .stream()
                 .map(CotizacionSerializer::toResponse)
                 .toList();
     }
@@ -72,7 +82,7 @@ public class CotizacionService {
                 .subtotal(subtotal)
                 .impuesto(impuesto)
                 .total(total)
-                .creadoEn(LocalDateTime.now())
+                .creadoEn(LocalDateTime.now(ZoneId.systemDefault()))
                 .creadoPor(usuario)
                 .build();
 
@@ -81,7 +91,7 @@ public class CotizacionService {
 
         Cotizacion saved = cotizacionRepository.save(cotizacion);
         log.info("Cotización creada: {} por {}", numero, usuario);
-        registrarAudit(saved.getId(), "COTIZACION", "CREAR", usuario, "Número: " + numero);
+        registrarAudit(saved.getId(), ENTIDAD_COT, "CREAR", usuario, "Número: " + numero);
 
         return CotizacionSerializer.toResponse(saved);
     }
@@ -89,9 +99,9 @@ public class CotizacionService {
     public CotizacionResponse aprobar(Long id, String usuario) {
         Cotizacion cotizacion = buscarOFallar(id);
         transicionar(cotizacion, EstadoCotizacion.ACEPTADA);
-        cotizacion.setActualizadoEn(LocalDateTime.now());
+        cotizacion.setActualizadoEn(LocalDateTime.now(ZoneId.systemDefault()));
         cotizacionRepository.save(cotizacion);
-        registrarAudit(id, "COTIZACION", "APROBAR", usuario, cotizacion.getNumero());
+        registrarAudit(id, ENTIDAD_COT, "APROBAR", usuario, cotizacion.getNumero());
 
         eventPublisher.publishEvent(new CotizacionAprobadaEvent(this, cotizacion));
         log.info("Cotización {} aprobada por {}", cotizacion.getNumero(), usuario);
@@ -102,10 +112,32 @@ public class CotizacionService {
     public CotizacionResponse rechazar(Long id, String usuario) {
         Cotizacion cotizacion = buscarOFallar(id);
         transicionar(cotizacion, EstadoCotizacion.RECHAZADA);
-        cotizacion.setActualizadoEn(LocalDateTime.now());
+        cotizacion.setActualizadoEn(LocalDateTime.now(ZoneId.systemDefault()));
         cotizacionRepository.save(cotizacion);
-        registrarAudit(id, "COTIZACION", "RECHAZAR", usuario, cotizacion.getNumero());
+        registrarAudit(id, ENTIDAD_COT, "RECHAZAR", usuario, cotizacion.getNumero());
         log.info("Cotización {} rechazada por {}", cotizacion.getNumero(), usuario);
+
+        return CotizacionSerializer.toResponse(cotizacion);
+    }
+
+    public CotizacionResponse enviar(Long id, String usuario) {
+        Cotizacion cotizacion = buscarOFallar(id);
+        transicionar(cotizacion, EstadoCotizacion.ENVIADA);
+        cotizacion.setActualizadoEn(LocalDateTime.now(ZoneId.systemDefault()));
+        cotizacionRepository.save(cotizacion);
+        registrarAudit(id, ENTIDAD_COT, "ENVIAR", usuario, cotizacion.getNumero());
+        log.info("Cotización {} marcada como ENVIADA por {}", cotizacion.getNumero(), usuario);
+
+        return CotizacionSerializer.toResponse(cotizacion);
+    }
+
+    public CotizacionResponse anular(Long id, String usuario) {
+        Cotizacion cotizacion = buscarOFallar(id);
+        transicionar(cotizacion, EstadoCotizacion.ANULADA);
+        cotizacion.setActualizadoEn(LocalDateTime.now(ZoneId.systemDefault()));
+        cotizacionRepository.save(cotizacion);
+        registrarAudit(id, ENTIDAD_COT, "ANULAR", usuario, cotizacion.getNumero());
+        log.info("Cotización {} anulada por {}", cotizacion.getNumero(), usuario);
 
         return CotizacionSerializer.toResponse(cotizacion);
     }
@@ -134,7 +166,7 @@ public class CotizacionService {
                     .precioUnitario(r.precioUnitario())
                     .subtotal(subtotalLinea)
                     .build();
-        }).collect(Collectors.toList());
+        }).toList();
     }
 
     private BigDecimal sumarSubtotales(List<LineaCotizacion> lineas) {
@@ -150,7 +182,7 @@ public class CotizacionService {
                 .accion(accion)
                 .usuario(usuario)
                 .detalle(detalle)
-                .timestamp(LocalDateTime.now())
+                .timestamp(LocalDateTime.now(ZoneId.systemDefault()))
                 .build());
     }
 }

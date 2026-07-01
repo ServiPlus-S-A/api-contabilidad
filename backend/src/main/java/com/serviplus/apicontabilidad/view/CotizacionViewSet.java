@@ -27,6 +27,13 @@ public class CotizacionViewSet {
 
     private final CotizacionService cotizacionService;
 
+    @GetMapping("/facturables")
+    @PreAuthorize("hasAnyRole('ADMIN','CONTADOR')")
+    @Operation(summary = "Lista cotizaciones ACEPTADAS sin factura asociada — para cargar datos de atenciones")
+    public ResponseEntity<List<CotizacionResponse>> listarFacturables() {
+        return ResponseEntity.ok(cotizacionService.listarFacturables());
+    }
+
     @GetMapping
     @Operation(summary = "Lista cotizaciones — todas (admin/contador) o propias (cliente)")
     public ResponseEntity<List<CotizacionResponse>> listar(Authentication auth) {
@@ -63,5 +70,19 @@ public class CotizacionViewSet {
     @Operation(summary = "Rechaza una cotización ENVIADA")
     public ResponseEntity<CotizacionResponse> rechazar(@PathVariable Long id, Authentication auth) {
         return ResponseEntity.ok(cotizacionService.rechazar(id, auth.getName()));
+    }
+
+    @PutMapping("/{id}/enviar")
+    @PreAuthorize("hasAnyRole('ADMIN','CONTADOR')")
+    @Operation(summary = "Marca la cotización como ENVIADA para revisión — transición BORRADOR → ENVIADA")
+    public ResponseEntity<CotizacionResponse> enviar(@PathVariable Long id, Authentication auth) {
+        return ResponseEntity.ok(cotizacionService.enviar(id, auth.getName()));
+    }
+
+    @PutMapping("/{id}/anular")
+    @PreAuthorize("hasAnyRole('ADMIN','CONTADOR')")
+    @Operation(summary = "Anula la cotización — válido desde BORRADOR o ENVIADA")
+    public ResponseEntity<CotizacionResponse> anular(@PathVariable Long id, Authentication auth) {
+        return ResponseEntity.ok(cotizacionService.anular(id, auth.getName()));
     }
 }
