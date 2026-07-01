@@ -273,10 +273,23 @@ class FacturaServiceTest {
         }
 
         @Test
-        @DisplayName("debe lanzar RecursoNoEncontradoException cuando PDF aún no está listo")
+        @DisplayName("debe lanzar RecursoNoEncontradoException cuando pdfUrl es null")
         void debeLanzarExcepcionSiPdfUrlNulo() {
             Factura factura = facturaStub("FAC-2026-0001",
                     new BigDecimal("100.00"), new BigDecimal("13.00"), new BigDecimal("113.00"));
+            when(facturaRepository.findById(1L)).thenReturn(Optional.of(factura));
+
+            assertThatThrownBy(() -> facturaService.descargarPdf(1L, "admin"))
+                    .isInstanceOf(RecursoNoEncontradoException.class)
+                    .hasMessageContaining("FAC-2026-0001");
+        }
+
+        @Test
+        @DisplayName("debe lanzar RecursoNoEncontradoException cuando pdfUrl está en blanco")
+        void debeLanzarExcepcionSiPdfUrlEnBlanco() {
+            Factura factura = facturaStub("FAC-2026-0001",
+                    new BigDecimal("100.00"), new BigDecimal("13.00"), new BigDecimal("113.00"));
+            factura.setPdfUrl("   ");
             when(facturaRepository.findById(1L)).thenReturn(Optional.of(factura));
 
             assertThatThrownBy(() -> facturaService.descargarPdf(1L, "admin"))
