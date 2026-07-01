@@ -9,6 +9,7 @@ import com.serviplus.apicontabilidad.serializer.factura.AnularFacturaRequest;
 import com.serviplus.apicontabilidad.serializer.factura.FacturaRequest;
 import com.serviplus.apicontabilidad.serializer.factura.FacturaResponse;
 import com.serviplus.apicontabilidad.serializer.factura.LineaFacturaRequest;
+import com.serviplus.apicontabilidad.serializer.factura.PdfDescarga;
 import com.serviplus.apicontabilidad.utility.NumeroGenerator;
 import com.serviplus.apicontabilidad.utility.RecursoNoEncontradoException;
 import com.serviplus.apicontabilidad.utility.TransicionInvalidaException;
@@ -40,6 +41,7 @@ class FacturaServiceTest {
     @Mock private AuditLogRepository auditLogRepository;
     @Mock private ApplicationEventPublisher eventPublisher;
     @Mock private NumeroGenerator numeroGenerator;
+    @Mock private PDFGeneratorService pdfGeneratorService;
 
     private FacturaService facturaService;
 
@@ -55,7 +57,7 @@ class FacturaServiceTest {
         );
         facturaService = new FacturaService(
                 facturaRepository, auditLogRepository, eventPublisher,
-                numeroGenerator, appProperties);
+                numeroGenerator, appProperties, pdfGeneratorService);
     }
 
     @Nested
@@ -249,6 +251,74 @@ class FacturaServiceTest {
             assertThatThrownBy(() -> facturaService.actualizarPdfUrl(99L, "url"))
                     .isInstanceOf(RecursoNoEncontradoException.class)
                     .hasMessageContaining("99");
+        }
+    }
+
+    @Nested
+    @DisplayName("descargarPdf()")
+    class DescargarPdf {
+
+        @Test
+        @DisplayName("debe retornar bytes y nombre cuando el PDF está listo")
+        void debeRetornarPdfCuandoDisponible() {
+            Factura factura = facturaStub("FAC-2026-0001",
+                    new BigDecimal("100.00"), new BigDecimal("13.00"), new BigDecimal("113.00"));
+            factura.setPdfUrl("http://minio/bucket/facturas/FAC-2026-0001.pdf");
+            when(facturaRepository.findById(1L)).thenReturn(Optional.of(factura));
+            byte[] fakeBytes = new byte[]{1, 2, 3};
+            when(pdfGeneratorService.descargarDeMinio("facturas/FAC-2026-0001.pdf"))
+                    .thenReturn(fakeBytes);
+
+            PdfDescarga result = facturaService.descargarPdf(1L);
+
+            assertThat(result.contenido()).isSameAs(fakeBytes);
+            assertThat(result.nombreArchivo()).startsWith("Factura_FAC-2026-0001_");
+        }
+
+        @Test
+        @DisplayName("debe lanzar RecursoNoEncontradoException cuando PDF aún no está listo")
+        void debeLanzarExcepcionSiPdfUrlNulo() {
+            Factura factura = facturaStub("FAC-2026-0001",
+                    new BigDecimal("100.00"), new BigDecimal("13.00"), new BigDecimal("113.00"));
+            when(facturaRepository.findById(1L)).thenReturn(Optional.of(factura));
+
+            assertThatThrownBy(() -> facturaService.descargarPdf(1L))
+                    .isInstanceOf(RecursoNoEncontradoException.class)
+                    .hasMessageContaining("FAC-2026-0001");
+        }
+
+        @Test
+        @DisplayName("debe lanzar RecursoNoEncontradoException cuando factura no existe")
+        void debeLanzarExcepcionSiFacturaNoExiste() {
+            when(facturaRepository.findById(99L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> facturaService.descargarPdf(99L))
+                    .isInstanceOf(RecursoNoEncontradoException.class)
+                    .hasMessageContaining("99");
+        }
+    }
+
+    @Nested
+    @DisplayName("PdfDescarga — record")
+    class PdfDescargaTests {
+
+        @Test
+        @DisplayName("constructor y accessors exponen contenido y nombreArchivo")
+        void debeExponerCampos() {
+            byte[] bytes = new byte[]{1, 2, 3};
+            PdfDescarga pdf = new PdfDescarga(bytes, "Factura_FAC-2026-0001_Cliente.pdf");
+            assertThat(pdf.contenido()).isSameAs(bytes);
+            assertThat(pdf.nombreArchivo()).isEqualTo("Factura_FAC-2026-0001_Cliente.pdf");
+        }
+
+        @Test
+        @DisplayName("equals, hashCode y toString del record")
+        void debeImplementarEqualsHashCodeToString() {
+            byte[] bytes = new byte[]{1, 2, 3};
+            PdfDescarga a = new PdfDescarga(bytes, "nombre.pdf");
+            PdfDescarga b = new PdfDescarga(bytes, "nombre.pdf");
+            assertThat(a).isEqualTo(b).hasSameHashCodeAs(b);
+            assertThat(a.toString()).contains("nombre.pdf");
         }
     }
 

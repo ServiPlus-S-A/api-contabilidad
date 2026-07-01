@@ -4,11 +4,14 @@ import com.serviplus.apicontabilidad.logic.FacturaService;
 import com.serviplus.apicontabilidad.serializer.factura.AnularFacturaRequest;
 import com.serviplus.apicontabilidad.serializer.factura.FacturaRequest;
 import com.serviplus.apicontabilidad.serializer.factura.FacturaResponse;
+import com.serviplus.apicontabilidad.serializer.factura.PdfDescarga;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -48,5 +51,16 @@ public class FacturaViewSet {
             @Valid @RequestBody AnularFacturaRequest request,
             Authentication auth) {
         return ResponseEntity.ok(facturaService.anular(id, request.motivo(), auth.getName()));
+    }
+
+    @GetMapping("/{id}/pdf")
+    @Operation(summary = "Descarga el PDF de una factura desde MinIO")
+    public ResponseEntity<byte[]> descargarPdf(@PathVariable Long id) {
+        PdfDescarga pdf = facturaService.descargarPdf(id);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + pdf.nombreArchivo() + "\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf.contenido());
     }
 }

@@ -33,6 +33,7 @@ public class FacturaService {
     private final ApplicationEventPublisher eventPublisher;
     private final NumeroGenerator numeroGenerator;
     private final AppProperties appProperties;
+    private final PDFGeneratorService pdfGeneratorService;
 
     @Transactional(readOnly = true)
     public FacturaResponse obtener(Long id) {
@@ -93,6 +94,23 @@ public class FacturaService {
         log.info("Factura {} anulada por {}", factura.getNumero(), usuario);
 
         return FacturaSerializer.toResponse(factura);
+    }
+
+    @Transactional(readOnly = true)
+    public PdfDescarga descargarPdf(Long id) {
+        Factura factura = facturaRepository.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException(MSG_FACTURA_NO_ENCONTRADA + id));
+        String pdfUrl = factura.getPdfUrl();
+        if (pdfUrl == null || pdfUrl.isBlank()) {
+            throw new RecursoNoEncontradoException(
+                    "PDF aún no disponible para la factura: " + factura.getNumero());
+        }
+        String objectName = "facturas/%s.pdf".formatted(factura.getNumero());
+        byte[] contenido = pdfGeneratorService.descargarDeMinio(objectName);
+        String nombreArchivo = "Factura_%s_%s.pdf".formatted(
+                factura.getNumero(),
+                factura.getClienteNombre().replaceAll("[^a-zA-Z0-9_\\-]", "_"));
+        return new PdfDescarga(contenido, nombreArchivo);
     }
 
     public void actualizarPdfUrl(Long id, String pdfUrl) {

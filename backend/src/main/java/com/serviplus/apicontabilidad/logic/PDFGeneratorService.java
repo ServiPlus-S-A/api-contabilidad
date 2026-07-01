@@ -2,6 +2,7 @@ package com.serviplus.apicontabilidad.logic;
 
 import com.serviplus.apicontabilidad.config.AppProperties;
 import com.serviplus.apicontabilidad.domain.Factura;
+import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import lombok.RequiredArgsConstructor;
@@ -102,6 +103,19 @@ public class PDFGeneratorService {
         content.newLineAtOffset(50, 655);
         content.showText("TOTAL: " + factura.getTotal());
         content.endText();
+    }
+
+    public byte[] descargarDeMinio(String objectName) {
+        String bucket = appProperties.minio().bucket();
+        try (var stream = minioClient.getObject(
+                GetObjectArgs.builder()
+                        .bucket(bucket)
+                        .object(objectName)
+                        .build())) {
+            return stream.readAllBytes();
+        } catch (Exception e) {
+            throw new RuntimeException("Error al descargar PDF de MinIO: " + objectName, e);
+        }
     }
 
     private String subirAMinio(String numero, byte[] pdfBytes) throws IOException {
