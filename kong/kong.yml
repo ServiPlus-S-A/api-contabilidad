@@ -47,10 +47,7 @@ services:
       - name: cors
         config:
           origins:
-            - "http://localhost:5173"
-            - "http://localhost:8000"
-            - "http://$(PUBLIC_HOST)"
-            - "http://$(PUBLIC_HOST):8000"
+            - "*"
           methods:
             - GET
             - POST
@@ -63,15 +60,8 @@ services:
             - Accept
           exposed_headers:
             - Authorization
-          credentials: true
+          credentials: false
           max_age: 3600
-      - name: rate-limiting
-        config:
-          minute: 120
-          policy: local
-          error_message: "Demasiadas solicitudes — intente en un momento"
-      - name: request-termination
-        enabled: false
 
   # ============================================================================
   # Frontend — Nginx on port 80
