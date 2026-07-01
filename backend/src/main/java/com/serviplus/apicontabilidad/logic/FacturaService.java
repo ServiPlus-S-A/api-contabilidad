@@ -3,6 +3,7 @@ package com.serviplus.apicontabilidad.logic;
 import com.serviplus.apicontabilidad.async.event.FacturaCreadaEvent;
 import com.serviplus.apicontabilidad.config.AppProperties;
 import com.serviplus.apicontabilidad.data.AuditLogRepository;
+import com.serviplus.apicontabilidad.data.CotizacionRepository;
 import com.serviplus.apicontabilidad.data.FacturaRepository;
 import com.serviplus.apicontabilidad.domain.*;
 import com.serviplus.apicontabilidad.serializer.factura.*;
@@ -30,6 +31,7 @@ public class FacturaService {
     private static final String MSG_FACTURA_NO_ENCONTRADA = "Factura no encontrada: ";
 
     private final FacturaRepository facturaRepository;
+    private final CotizacionRepository cotizacionRepository;
     private final AuditLogRepository auditLogRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final NumeroGenerator numeroGenerator;
@@ -43,6 +45,10 @@ public class FacturaService {
     }
 
     public FacturaResponse crear(FacturaRequest request, String usuario) {
+        if (request.cotizacionId() != null
+                && !cotizacionRepository.existsById(request.cotizacionId())) {
+            throw new RecursoNoEncontradoException("Cotización no encontrada: " + request.cotizacionId());
+        }
         BigDecimal ivaRate = appProperties.iva().rate();
         String numero = numeroGenerator.siguiente("FAC");
 
@@ -57,6 +63,7 @@ public class FacturaService {
                 .clienteNombre(request.clienteNombre())
                 .fechaVencimiento(request.fechaVencimiento())
                 .notas(request.notas())
+                .cotizacionId(request.cotizacionId())
                 .estado(EstadoFactura.PENDIENTE)
                 .subtotal(subtotal)
                 .impuesto(impuesto)

@@ -49,6 +49,14 @@ public class CotizacionService {
     }
 
     @Transactional(readOnly = true)
+    public List<CotizacionResponse> listarFacturables() {
+        return cotizacionRepository.findFacturables(EstadoCotizacion.ACEPTADA)
+                .stream()
+                .map(CotizacionSerializer::toResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public CotizacionResponse obtener(Long id) {
         return cotizacionRepository.findById(id)
                 .map(CotizacionSerializer::toResponse)

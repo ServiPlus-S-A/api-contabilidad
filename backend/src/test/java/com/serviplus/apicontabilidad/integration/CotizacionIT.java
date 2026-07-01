@@ -4,6 +4,9 @@ import com.serviplus.apicontabilidad.domain.EstadoCotizacion;
 import com.serviplus.apicontabilidad.serializer.cotizacion.CotizacionRequest;
 import com.serviplus.apicontabilidad.serializer.cotizacion.CotizacionResponse;
 import com.serviplus.apicontabilidad.serializer.cotizacion.LineaCotizacionRequest;
+import com.serviplus.apicontabilidad.serializer.factura.FacturaRequest;
+import com.serviplus.apicontabilidad.serializer.factura.FacturaResponse;
+import com.serviplus.apicontabilidad.serializer.factura.LineaFacturaRequest;
 import io.minio.MinioClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -379,6 +382,126 @@ class CotizacionIT extends AbstractContainerIT {
                     String.class);
 
             assertThat(res.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+    }
+
+    // ── GET /api/v1/cotizaciones/facturables ──────────────────────────────────
+
+    @Nested
+    @DisplayName("GET /api/v1/cotizaciones/facturables")
+    class ListarFacturables {
+
+        @Test
+        @DisplayName("200 con lista vacía cuando no hay cotizaciones ACEPTADAS sin factura")
+        void debeRetornarListaVaciaCuandoNoHayFacturables() {
+            ResponseEntity<CotizacionResponse[]> res = restTemplate.exchange(
+                    url("/api/v1/cotizaciones/facturables"), HttpMethod.GET,
+                    new HttpEntity<>(authHeaders(JwtTestHelper.adminToken())),
+                    CotizacionResponse[].class);
+
+            assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(res.getBody()).isNotNull().isEmpty();
+        }
+
+        @Test
+        @DisplayName("401 sin token de autenticación")
+        void debeRetornar401SinToken() {
+            ResponseEntity<String> res = restTemplate.exchange(
+                    url("/api/v1/cotizaciones/facturables"), HttpMethod.GET,
+                    new HttpEntity<>(new HttpHeaders()), String.class);
+
+            assertThat(res.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+
+        @Test
+        @DisplayName("403 cuando ROLE_CLIENTE intenta acceder")
+        void debeRetornar403ParaRolCliente() {
+            ResponseEntity<String> res = restTemplate.exchange(
+                    url("/api/v1/cotizaciones/facturables"), HttpMethod.GET,
+                    new HttpEntity<>(authHeaders(JwtTestHelper.clienteToken())),
+                    String.class);
+
+            assertThat(res.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+
+        @Test
+        @DisplayName("409 al crear segunda factura vinculada a la misma cotizacion")
+        void debeRetornar409AlDuplicarVinculoCotizacion() {
+            ResponseEntity<CotizacionResponse> created = restTemplate.postForEntity(
+                    url("/api/v1/cotizaciones"),
+                    new HttpEntity<>(buildRequest(), authHeaders(JwtTestHelper.contadorToken())),
+                    CotizacionResponse.class);
+            long cotId = created.getBody().id();
+
+            restTemplate.exchange(url("/api/v1/cotizaciones/" + cotId + "/enviar"),
+                    HttpMethod.PUT, new HttpEntity<>(authHeaders(JwtTestHelper.contadorToken())),
+                    CotizacionResponse.class);
+            restTemplate.exchange(url("/api/v1/cotizaciones/" + cotId + "/aprobar"),
+                    HttpMethod.PUT, new HttpEntity<>(authHeaders(JwtTestHelper.adminToken())),
+                    CotizacionResponse.class);
+
+            FacturaRequest facturaReq = new FacturaRequest(
+                    1L, "Cliente", LocalDate.now().plusDays(30), null,
+                    List.of(new LineaFacturaRequest("Servicio", new BigDecimal("1"), new BigDecimal("500.00"))),
+                    cotId);
+
+            restTemplate.postForEntity(url("/api/v1/facturas"),
+                    new HttpEntity<>(facturaReq, authHeaders(JwtTestHelper.contadorToken())),
+                    FacturaResponse.class);
+
+            ResponseEntity<String> res = restTemplate.postForEntity(url("/api/v1/facturas"),
+                    new HttpEntity<>(facturaReq, authHeaders(JwtTestHelper.contadorToken())),
+                    String.class);
+
+            assertThat(res.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        }
+
+        @Test
+        @DisplayName("flujo completo: cotización ACEPTADA aparece en facturables; desaparece al crear factura")
+        void debeExcluirCotizacionCuandoYaTieneFactura() {
+            // 1. Crear cotización y llevarla a ACEPTADA
+            ResponseEntity<CotizacionResponse> created = restTemplate.postForEntity(
+                    url("/api/v1/cotizaciones"),
+                    new HttpEntity<>(buildRequest(), authHeaders(JwtTestHelper.contadorToken())),
+                    CotizacionResponse.class);
+            long cotId = created.getBody().id();
+
+            restTemplate.exchange(url("/api/v1/cotizaciones/" + cotId + "/enviar"),
+                    HttpMethod.PUT, new HttpEntity<>(authHeaders(JwtTestHelper.contadorToken())),
+                    CotizacionResponse.class);
+            restTemplate.exchange(url("/api/v1/cotizaciones/" + cotId + "/aprobar"),
+                    HttpMethod.PUT, new HttpEntity<>(authHeaders(JwtTestHelper.adminToken())),
+                    CotizacionResponse.class);
+
+            // 2. Debe aparecer en facturables
+            ResponseEntity<CotizacionResponse[]> antesRes = restTemplate.exchange(
+                    url("/api/v1/cotizaciones/facturables"), HttpMethod.GET,
+                    new HttpEntity<>(authHeaders(JwtTestHelper.adminToken())),
+                    CotizacionResponse[].class);
+            assertThat(antesRes.getBody()).hasSize(1);
+            assertThat(antesRes.getBody()[0].id()).isEqualTo(cotId);
+
+            // 3. Crear factura vinculada a esa cotización
+            FacturaRequest facturaReq = new FacturaRequest(
+                    created.getBody().clienteId(),
+                    created.getBody().clienteNombre(),
+                    LocalDate.now().plusDays(30),
+                    null,
+                    List.of(new LineaFacturaRequest(
+                            "Consultoría técnica",
+                            new BigDecimal("2.00"),
+                            new BigDecimal("500.00"))),
+                    cotId);
+            restTemplate.postForEntity(url("/api/v1/facturas"),
+                    new HttpEntity<>(facturaReq, authHeaders(JwtTestHelper.contadorToken())),
+                    FacturaResponse.class);
+
+            // 4. Ya no debe aparecer en facturables
+            ResponseEntity<CotizacionResponse[]> despuesRes = restTemplate.exchange(
+                    url("/api/v1/cotizaciones/facturables"), HttpMethod.GET,
+                    new HttpEntity<>(authHeaders(JwtTestHelper.adminToken())),
+                    CotizacionResponse[].class);
+            assertThat(despuesRes.getBody()).isEmpty();
         }
     }
 }

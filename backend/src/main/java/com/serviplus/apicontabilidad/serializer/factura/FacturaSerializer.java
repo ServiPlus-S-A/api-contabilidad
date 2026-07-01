@@ -27,6 +27,7 @@ public final class FacturaSerializer {
                 factura.getTotal(),
                 factura.getSaldo(),
                 factura.getPdfUrl(),
+                factura.getCotizacionId(),
                 toLineaResponses(factura.getLineas()),
                 factura.getCreadoEn(),
                 factura.getCreadoPor()

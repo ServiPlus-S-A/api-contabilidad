@@ -60,7 +60,8 @@ class FacturaIT extends AbstractContainerIT {
                 List.of(new LineaFacturaRequest(
                         "Servicio de desarrollo",
                         new BigDecimal("1.00"),
-                        new BigDecimal("1000.00")))
+                        new BigDecimal("1000.00"))),
+                null
         );
     }
 
@@ -84,6 +85,22 @@ class FacturaIT extends AbstractContainerIT {
             assertThat(body.numero()).startsWith("FAC-");
             assertThat(body.estado()).isEqualTo(EstadoFactura.PENDIENTE);
             assertThat(body.saldo()).isEqualByComparingTo(body.total());
+        }
+
+        @Test
+        @DisplayName("404 cuando cotizacionId no existe en la base de datos")
+        void debeRetornar404SiCotizacionIdNoExiste() {
+            FacturaRequest req = new FacturaRequest(
+                    1L, "Cliente", LocalDate.now().plusDays(30), null,
+                    List.of(new LineaFacturaRequest("Servicio", new BigDecimal("1"), new BigDecimal("100.00"))),
+                    999999L);
+
+            ResponseEntity<String> res = restTemplate.postForEntity(
+                    url("/api/v1/facturas"),
+                    new HttpEntity<>(req, authHeaders(JwtTestHelper.contadorToken())),
+                    String.class);
+
+            assertThat(res.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         }
 
         @Test

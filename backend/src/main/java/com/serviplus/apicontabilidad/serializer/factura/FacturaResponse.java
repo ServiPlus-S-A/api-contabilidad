@@ -20,6 +20,7 @@ public record FacturaResponse(
         BigDecimal total,
         BigDecimal saldo,
         String pdfUrl,
+        Long cotizacionId,
         List<LineaFacturaResponse> lineas,
         LocalDateTime creadoEn,
         String creadoPor

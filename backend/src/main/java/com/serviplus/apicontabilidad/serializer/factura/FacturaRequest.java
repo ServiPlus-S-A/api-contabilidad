@@ -26,6 +26,9 @@ public record FacturaRequest(
         @NotNull(message = "Debe incluir al menos una línea")
         @Size(min = 1, message = "Debe incluir al menos una línea de detalle")
         @Valid
-        List<LineaFacturaRequest> lineas
+        List<LineaFacturaRequest> lineas,
+
+        @Min(value = 1, message = "El ID de cotización debe ser mayor a cero")
+        Long cotizacionId
 ) {
 }
