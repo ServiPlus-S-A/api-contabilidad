@@ -1,3 +1,3 @@
 package com.serviplus.apicontabilidad.serializer.factura;
 
-public record PdfDescarga(byte[] contenido, String nombreArchivo) {}
+public record PdfDescarga(String objectName, String nombreArchivo) {}

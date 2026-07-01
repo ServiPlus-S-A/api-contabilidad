@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -33,7 +34,6 @@ public class FacturaService {
     private final ApplicationEventPublisher eventPublisher;
     private final NumeroGenerator numeroGenerator;
     private final AppProperties appProperties;
-    private final PDFGeneratorService pdfGeneratorService;
 
     @Transactional(readOnly = true)
     public FacturaResponse obtener(Long id) {
@@ -96,8 +96,8 @@ public class FacturaService {
         return FacturaSerializer.toResponse(factura);
     }
 
-    @Transactional(readOnly = true)
-    public PdfDescarga descargarPdf(Long id) {
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public PdfDescarga descargarPdf(Long id, String usuario) {
         Factura factura = facturaRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException(MSG_FACTURA_NO_ENCONTRADA + id));
         String pdfUrl = factura.getPdfUrl();
@@ -105,12 +105,13 @@ public class FacturaService {
             throw new RecursoNoEncontradoException(
                     "PDF aún no disponible para la factura: " + factura.getNumero());
         }
-        String objectName = "facturas/%s.pdf".formatted(factura.getNumero());
-        byte[] contenido = pdfGeneratorService.descargarDeMinio(objectName);
+        String bucket = appProperties.minio().bucket();
+        String objectName = pdfUrl.substring(pdfUrl.indexOf("/" + bucket + "/") + bucket.length() + 2);
         String nombreArchivo = "Factura_%s_%s.pdf".formatted(
                 factura.getNumero(),
                 factura.getClienteNombre().replaceAll("[^a-zA-Z0-9_\\-]", "_"));
-        return new PdfDescarga(contenido, nombreArchivo);
+        registrarAudit(id, ENTIDAD_FAC, "DESCARGAR_PDF", usuario, factura.getNumero());
+        return new PdfDescarga(objectName, nombreArchivo);
     }
 
     public void actualizarPdfUrl(Long id, String pdfUrl) {

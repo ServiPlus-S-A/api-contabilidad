@@ -2,9 +2,11 @@ package com.serviplus.apicontabilidad.logic;
 
 import com.serviplus.apicontabilidad.config.AppProperties;
 import com.serviplus.apicontabilidad.domain.Factura;
+import com.serviplus.apicontabilidad.utility.RecursoNoEncontradoException;
 import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
+import io.minio.errors.ErrorResponseException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -18,6 +20,7 @@ import org.springframework.stereotype.Service;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 
 /**
  * <<Template Method Pattern>> — Defines the skeleton for generating a PDF
@@ -105,14 +108,19 @@ public class PDFGeneratorService {
         content.endText();
     }
 
-    public byte[] descargarDeMinio(String objectName) {
+    public void streamearDeMinio(String objectName, OutputStream outputStream) {
         String bucket = appProperties.minio().bucket();
         try (var stream = minioClient.getObject(
                 GetObjectArgs.builder()
                         .bucket(bucket)
                         .object(objectName)
                         .build())) {
-            return stream.readAllBytes();
+            stream.transferTo(outputStream);
+        } catch (ErrorResponseException e) {
+            if ("NoSuchKey".equals(e.errorResponse().code())) {
+                throw new RecursoNoEncontradoException("PDF no encontrado en MinIO: " + objectName);
+            }
+            throw new RuntimeException("Error al descargar PDF de MinIO: " + objectName, e);
         } catch (Exception e) {
             throw new RuntimeException("Error al descargar PDF de MinIO: " + objectName, e);
         }
