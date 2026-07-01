@@ -1,6 +1,7 @@
 package com.serviplus.apicontabilidad.integration;
 
 import com.serviplus.apicontabilidad.domain.EstadoFactura;
+import com.serviplus.apicontabilidad.serializer.factura.AnularFacturaRequest;
 import com.serviplus.apicontabilidad.serializer.factura.FacturaRequest;
 import com.serviplus.apicontabilidad.serializer.factura.FacturaResponse;
 import com.serviplus.apicontabilidad.serializer.factura.LineaFacturaRequest;
@@ -136,6 +137,101 @@ class FacturaIT extends AbstractContainerIT {
                     String.class);
 
             assertThat(res.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    // ── PUT /api/v1/facturas/{id}/anular ─────────────────────────────────────
+
+    @Nested
+    @DisplayName("PUT /api/v1/facturas/{id}/anular")
+    class Anular {
+
+        private long crearFactura() {
+            ResponseEntity<FacturaResponse> res = restTemplate.postForEntity(
+                    url("/api/v1/facturas"),
+                    new HttpEntity<>(buildRequest(), authHeaders(JwtTestHelper.contadorToken())),
+                    FacturaResponse.class);
+            return res.getBody().id();
+        }
+
+        @Test
+        @DisplayName("200 y estado ANULADA al anular una factura PENDIENTE")
+        void debeAnularFacturaPendiente() {
+            long id = crearFactura();
+            AnularFacturaRequest body = new AnularFacturaRequest("Error de cobro detectado en factura");
+
+            ResponseEntity<FacturaResponse> res = restTemplate.exchange(
+                    url("/api/v1/facturas/" + id + "/anular"),
+                    HttpMethod.PUT,
+                    new HttpEntity<>(body, authHeaders(JwtTestHelper.adminToken())),
+                    FacturaResponse.class);
+
+            assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(res.getBody().estado()).isEqualTo(EstadoFactura.ANULADA);
+        }
+
+        @Test
+        @DisplayName("400 cuando el motivo está vacío")
+        void debeRetornar400SiMotivoVacio() {
+            long id = crearFactura();
+            AnularFacturaRequest body = new AnularFacturaRequest("");
+
+            ResponseEntity<String> res = restTemplate.exchange(
+                    url("/api/v1/facturas/" + id + "/anular"),
+                    HttpMethod.PUT,
+                    new HttpEntity<>(body, authHeaders(JwtTestHelper.adminToken())),
+                    String.class);
+
+            assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        }
+
+        @Test
+        @DisplayName("400 cuando el motivo tiene menos de 10 caracteres")
+        void debeRetornar400SiMotivoDemasiadoCorto() {
+            long id = crearFactura();
+            AnularFacturaRequest body = new AnularFacturaRequest("corto");
+
+            ResponseEntity<String> res = restTemplate.exchange(
+                    url("/api/v1/facturas/" + id + "/anular"),
+                    HttpMethod.PUT,
+                    new HttpEntity<>(body, authHeaders(JwtTestHelper.adminToken())),
+                    String.class);
+
+            assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        }
+
+        @Test
+        @DisplayName("403 cuando ROLE_CLIENTE intenta anular")
+        void debeRetornar403ParaRolCliente() {
+            long id = crearFactura();
+            AnularFacturaRequest body = new AnularFacturaRequest("Motivo válido de anulación aquí");
+
+            ResponseEntity<String> res = restTemplate.exchange(
+                    url("/api/v1/facturas/" + id + "/anular"),
+                    HttpMethod.PUT,
+                    new HttpEntity<>(body, authHeaders(JwtTestHelper.clienteToken())),
+                    String.class);
+
+            assertThat(res.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+
+        @Test
+        @DisplayName("422 al intentar anular una factura ya ANULADA")
+        void debeRetornar422SiYaAnulada() {
+            long id = crearFactura();
+            AnularFacturaRequest body = new AnularFacturaRequest("Primer motivo de anulación válido");
+
+            restTemplate.exchange(url("/api/v1/facturas/" + id + "/anular"),
+                    HttpMethod.PUT, new HttpEntity<>(body, authHeaders(JwtTestHelper.adminToken())),
+                    FacturaResponse.class);
+
+            ResponseEntity<String> res = restTemplate.exchange(
+                    url("/api/v1/facturas/" + id + "/anular"),
+                    HttpMethod.PUT,
+                    new HttpEntity<>(body, authHeaders(JwtTestHelper.adminToken())),
+                    String.class);
+
+            assertThat(res.getStatusCode().value()).isEqualTo(422);
         }
     }
 }

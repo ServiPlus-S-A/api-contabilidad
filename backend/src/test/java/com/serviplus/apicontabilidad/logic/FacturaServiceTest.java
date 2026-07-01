@@ -5,10 +5,13 @@ import com.serviplus.apicontabilidad.data.AuditLogRepository;
 import com.serviplus.apicontabilidad.data.FacturaRepository;
 import com.serviplus.apicontabilidad.domain.EstadoFactura;
 import com.serviplus.apicontabilidad.domain.Factura;
+import com.serviplus.apicontabilidad.serializer.factura.AnularFacturaRequest;
 import com.serviplus.apicontabilidad.serializer.factura.FacturaRequest;
+import com.serviplus.apicontabilidad.serializer.factura.FacturaResponse;
 import com.serviplus.apicontabilidad.serializer.factura.LineaFacturaRequest;
 import com.serviplus.apicontabilidad.utility.NumeroGenerator;
 import com.serviplus.apicontabilidad.utility.RecursoNoEncontradoException;
+import com.serviplus.apicontabilidad.utility.TransicionInvalidaException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -149,6 +152,106 @@ class FacturaServiceTest {
         }
     }
 
+    @Nested
+    @DisplayName("anular()")
+    class Anular {
+
+        @Test
+        @DisplayName("debe transicionar de PENDIENTE a ANULADA y registrar audit con motivo")
+        void debeAnularFacturaPendiente() {
+            Factura factura = facturaStub("FAC-2026-0001",
+                    new BigDecimal("100.00"), new BigDecimal("13.00"), new BigDecimal("113.00"));
+            when(facturaRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(factura));
+            when(facturaRepository.save(any())).thenReturn(factura);
+
+            FacturaResponse response = facturaService.anular(1L, "Error de cobro", "admin");
+
+            assertThat(response.estado()).isEqualTo(EstadoFactura.ANULADA);
+            verify(auditLogRepository).save(any());
+        }
+
+        @Test
+        @DisplayName("debe lanzar TransicionInvalidaException si ya está PAGADA")
+        void debeLanzarExcepcionSiYaPagada() {
+            Factura factura = facturaStubConEstado(EstadoFactura.PAGADA);
+            when(facturaRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(factura));
+
+            assertThatThrownBy(() -> facturaService.anular(1L, "intento de anulación", "admin"))
+                    .isInstanceOf(TransicionInvalidaException.class)
+                    .hasMessageContaining("PAGADA");
+        }
+
+        @Test
+        @DisplayName("debe lanzar TransicionInvalidaException si ya está ANULADA")
+        void debeLanzarExcepcionSiYaAnulada() {
+            Factura factura = facturaStubConEstado(EstadoFactura.ANULADA);
+            when(facturaRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(factura));
+
+            assertThatThrownBy(() -> facturaService.anular(1L, "intento duplicado", "admin"))
+                    .isInstanceOf(TransicionInvalidaException.class)
+                    .hasMessageContaining("ANULADA");
+        }
+
+        @Test
+        @DisplayName("debe lanzar RecursoNoEncontradoException si no existe")
+        void debeLanzarExcepcionSiNoExiste() {
+            when(facturaRepository.findByIdForUpdate(99L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> facturaService.anular(99L, "motivo válido aquí", "admin"))
+                    .isInstanceOf(RecursoNoEncontradoException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("AnularFacturaRequest — record")
+    class AnularFacturaRequestTests {
+
+        @Test
+        @DisplayName("constructor y accessor exponen el motivo correctamente")
+        void debeExponerMotivo() {
+            AnularFacturaRequest req = new AnularFacturaRequest("motivo de anulación válido");
+            assertThat(req.motivo()).isEqualTo("motivo de anulación válido");
+        }
+
+        @Test
+        @DisplayName("dos instancias con el mismo motivo son iguales (equals/hashCode/toString de record)")
+        void dosInstanciasConMismoMotivoSonIguales() {
+            AnularFacturaRequest a = new AnularFacturaRequest("mismo motivo exacto aquí");
+            AnularFacturaRequest b = new AnularFacturaRequest("mismo motivo exacto aquí");
+            assertThat(a).isEqualTo(b).hasSameHashCodeAs(b);
+            assertThat(a.toString()).contains("mismo motivo exacto aquí");
+        }
+    }
+
+    @Nested
+    @DisplayName("actualizarPdfUrl()")
+    class ActualizarPdfUrl {
+
+        @Test
+        @DisplayName("debe asignar la URL del PDF y persistir la factura")
+        void debeActualizarPdfUrlYPersistir() {
+            Factura factura = facturaStub("FAC-2026-0001",
+                    new BigDecimal("100.00"), new BigDecimal("13.00"), new BigDecimal("113.00"));
+            when(facturaRepository.findById(1L)).thenReturn(Optional.of(factura));
+            when(facturaRepository.save(any())).thenReturn(factura);
+
+            facturaService.actualizarPdfUrl(1L, "https://minio/bucket/fac.pdf");
+
+            assertThat(factura.getPdfUrl()).isEqualTo("https://minio/bucket/fac.pdf");
+            verify(facturaRepository).save(factura);
+        }
+
+        @Test
+        @DisplayName("debe lanzar RecursoNoEncontradoException si no existe")
+        void debeLanzarExcepcionSiNoExiste() {
+            when(facturaRepository.findById(99L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> facturaService.actualizarPdfUrl(99L, "url"))
+                    .isInstanceOf(RecursoNoEncontradoException.class)
+                    .hasMessageContaining("99");
+        }
+    }
+
     // ─── helpers ─────────────────────────────────────────────────────────────
 
     private Factura facturaStub(String numero, BigDecimal subtotal,
@@ -159,6 +262,20 @@ class FacturaServiceTest {
                 .fechaVencimiento(LocalDate.now().plusDays(30))
                 .estado(EstadoFactura.PENDIENTE)
                 .subtotal(subtotal).impuesto(impuesto).total(total).saldo(total)
+                .creadoEn(LocalDateTime.now()).creadoPor("user")
+                .lineas(List.of()).build();
+    }
+
+    private Factura facturaStubConEstado(EstadoFactura estado) {
+        return Factura.builder()
+                .id(1L).numero("FAC-2026-0001")
+                .clienteId(1L).clienteNombre("Cliente")
+                .fechaVencimiento(LocalDate.now().plusDays(30))
+                .estado(estado)
+                .subtotal(new BigDecimal("100.00"))
+                .impuesto(new BigDecimal("13.00"))
+                .total(new BigDecimal("113.00"))
+                .saldo(BigDecimal.ZERO)
                 .creadoEn(LocalDateTime.now()).creadoPor("user")
                 .lineas(List.of()).build();
     }
