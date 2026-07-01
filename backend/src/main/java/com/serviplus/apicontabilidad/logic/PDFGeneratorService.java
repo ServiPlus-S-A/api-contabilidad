@@ -36,6 +36,7 @@ import java.util.Locale;
 public class PDFGeneratorService {
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final String FMT_MONEY = "$%,.2f";
 
     // ── Color palette ──────────────────────────────────────────────────────────
     private static final Color NAVY      = new Color(29,  52,  90);
@@ -172,7 +173,8 @@ public class PDFGeneratorService {
             case "ANULADA" -> RED;
             default        -> ORANGE;
         };
-        float bW = 92f, bH = 22f;
+        float bW = 92f;
+        float bH = 22f;
         float bX = PAGE_W - MARGIN - bW;
         float bY = y - h / 2f - bH / 2f;
         rect(cs, badgeColor, bX, bY, bW, bH);
@@ -236,8 +238,8 @@ public class PDFGeneratorService {
             txt(cs, regular, 9, DARK, MARGIN + C_NUM + 4, rY, cut(linea.getDescripcion(), 37));
 
             String qty   = String.format(Locale.US, "%.2f", linea.getCantidad());
-            String price = String.format(Locale.US, "$%,.2f", linea.getPrecioUnitario());
-            String sub   = String.format(Locale.US, "$%,.2f", linea.getSubtotal());
+            String price = String.format(Locale.US, FMT_MONEY, linea.getPrecioUnitario());
+            String sub   = String.format(Locale.US, FMT_MONEY, linea.getSubtotal());
 
             txt(cs, regular, 9, DARK, MARGIN + C_NUM + C_DESC + C_QTY - sw(regular, 9, qty) - 4, rY, qty);
             txt(cs, regular, 9, DARK, MARGIN + C_NUM + C_DESC + C_QTY + C_PRICE - sw(regular, 9, price) - 4, rY, price);
@@ -257,12 +259,12 @@ public class PDFGeneratorService {
         float lX = PAGE_W - MARGIN - 215f;
         float rX = PAGE_W - MARGIN;
 
-        String stStr = String.format(Locale.US, "$%,.2f", factura.getSubtotal());
+        String stStr = String.format(Locale.US, FMT_MONEY, factura.getSubtotal());
         txt(cs, regular, 10, SECONDARY, lX, y, "Subtotal:");
         txt(cs, regular, 10, DARK, rX - sw(regular, 10, stStr), y, stStr);
         y -= 17;
 
-        String ivaStr = String.format(Locale.US, "$%,.2f", factura.getImpuesto());
+        String ivaStr = String.format(Locale.US, FMT_MONEY, factura.getImpuesto());
         txt(cs, regular, 10, SECONDARY, lX, y, "IVA (13%):");
         txt(cs, regular, 10, DARK, rX - sw(regular, 10, ivaStr), y, ivaStr);
         y -= 10;
@@ -274,7 +276,7 @@ public class PDFGeneratorService {
         rect(cs, NAVY, lX - 6, y - boxH + 9, rX - lX + 12, boxH);
 
         txt(cs, bold, 10, WHITE, lX, y, "TOTAL A PAGAR:");
-        String totalStr = String.format(Locale.US, "$%,.2f", factura.getTotal());
+        String totalStr = String.format(Locale.US, FMT_MONEY, factura.getTotal());
         txt(cs, bold, 14, WHITE, rX - sw(bold, 14, totalStr), y, totalStr);
 
         return y - boxH;
